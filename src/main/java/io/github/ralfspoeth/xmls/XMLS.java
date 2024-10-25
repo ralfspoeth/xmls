@@ -2,11 +2,13 @@ package io.github.ralfspoeth.xmls;
 
 import org.w3c.dom.*;
 
-import java.util.Iterator;
-import java.util.Spliterator;
-import java.util.Spliterators;
+import java.util.*;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
+
+import static io.github.ralfspoeth.xmls.Queries.attribute;
 
 /**
  * The class contains static methods
@@ -14,7 +16,21 @@ import java.util.stream.StreamSupport;
  */
 public class XMLS {
     // prevent instantiation
-    private XMLS(){}
+    private XMLS() {
+    }
+
+    static Map<String, Element> index(NodeList nl, Function<Element, String> indexBy) {
+        return stream(nl)
+                .filter(Element.class::isInstance)
+                .map(Element.class::cast)
+                .collect(Collectors.toMap(indexBy, Function.identity()));
+    }
+
+    static Map<String, Element> index(NodeList nl, String attrName) {
+        return index(nl, attribute(attrName)
+                        .andThen(an -> Optional.ofNullable(an).map(Attr::getValue).orElse(null))
+        );
+    }
 
     static Stream<Attr> stream(NamedNodeMap mn) {
         final int len = mn.getLength();
