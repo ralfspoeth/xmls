@@ -57,6 +57,12 @@ class XmlStreamsTest extends BaseTest {
     }
 
     @Test
+    void testIndex() {
+
+    }
+
+
+    @Test
     void streamElemsOf() {
     }
 
