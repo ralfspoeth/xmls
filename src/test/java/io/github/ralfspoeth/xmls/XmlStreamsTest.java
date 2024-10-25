@@ -16,7 +16,7 @@ import java.io.StringReader;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class XMLSTest {
+class XmlStreamsTest {
 
     private static final DocumentBuilderFactory DEFAULT_FACTORY = DocumentBuilderFactory.newDefaultInstance();
     private DocumentBuilder parser;
@@ -42,7 +42,7 @@ class XMLSTest {
                 """;
         var doc = parseString(src);
         var nl = doc.getDocumentElement().getChildNodes();
-        var sumN = XMLS.stream(nl)
+        var sumN = XmlStreams.stream(nl)
                 .filter(Element.class::isInstance)
                 .map(Element.class::cast)
                 .map(e -> e.getAttribute("n"))

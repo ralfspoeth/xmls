@@ -14,9 +14,9 @@ import static io.github.ralfspoeth.xmls.Queries.attribute;
  * The class contains static methods
  * that produce streams of {@link Node}s.
  */
-public class XMLS {
+public class XmlStreams {
     // prevent instantiation
-    private XMLS() {
+    private XmlStreams() {
     }
 
     static Map<String, Element> index(NodeList nl, Function<Element, String> indexBy) {
@@ -81,5 +81,10 @@ public class XMLS {
             str = str.flatMap(e -> streamElemsOf(e, tag));
         }
         return str;
+    }
+
+    static Stream<Element> streamAllElems(Element element) {
+        return stream(element.getChildNodes()).filter(n -> n.getNodeType() == Node.ELEMENT_NODE)
+                .map(Element.class::cast);
     }
 }
