@@ -83,8 +83,7 @@ public class XmlStreams {
         return str;
     }
 
-    static Stream<Element> streamAllElems(Element element) {
-        return stream(element.getChildNodes()).filter(n -> n.getNodeType() == Node.ELEMENT_NODE)
-                .map(Element.class::cast);
+    static Stream<Element> streamAllElems(Document doc) {
+        return stream(doc.getElementsByTagName("*")).map(Element.class::cast);
     }
 }

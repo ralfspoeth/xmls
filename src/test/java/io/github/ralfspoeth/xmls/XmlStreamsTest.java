@@ -6,13 +6,13 @@ import org.xml.sax.SAXException;
 
 import java.io.IOException;
 
-import static org.junit.jupiter.api.Assertions.assertAll;
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static io.github.ralfspoeth.xmls.XmlStreams.streamAllElems;
+import static org.junit.jupiter.api.Assertions.*;
 
 class XmlStreamsTest extends BaseTest {
 
     @Test
-    void testStreamNodeList() throws IOException, SAXException {
+    void testStreamNodeList() throws Exception {
         var src = """
                 <?xml version='1.0'?>
                 <root>
@@ -33,7 +33,27 @@ class XmlStreamsTest extends BaseTest {
     }
 
     @Test
-    void testStream() {
+    void testStreamAllElems() throws Exception {
+        // given
+        var src = """
+                <?xml version='1.0'?>
+                <root>
+                    <e1 id='1'/>
+                    <e1 id='2'>
+                        <e2 id='3'/>
+                        <e2 id='4'/>
+                        <e2 id='5'/>
+                    </e1>
+                </root>""";
+        // when
+        var doc = parseString(src);
+        // then
+        assertAll(
+                () -> assertEquals(6, streamAllElems(doc).count()),
+                () -> assertEquals(1, streamAllElems(doc).filter(e -> e.getTagName().equals("root")).count()),
+                () -> assertEquals(2, streamAllElems(doc).filter(e -> e.getTagName().equals("e1")).count()),
+                () -> assertEquals(3, streamAllElems(doc).filter(e -> e.getTagName().equals("e2")).count())
+        );
     }
 
     @Test
