@@ -2,9 +2,8 @@ package io.github.ralfspoeth.xmls;
 
 import org.junit.jupiter.api.Test;
 import org.w3c.dom.Element;
-import org.xml.sax.SAXException;
 
-import java.io.IOException;
+import java.util.List;
 
 import static io.github.ralfspoeth.xmls.XmlStreams.streamAllElems;
 import static org.junit.jupiter.api.Assertions.*;
@@ -52,7 +51,11 @@ class XmlStreamsTest extends BaseTest {
                 () -> assertEquals(6, streamAllElems(doc).count()),
                 () -> assertEquals(1, streamAllElems(doc).filter(e -> e.getTagName().equals("root")).count()),
                 () -> assertEquals(2, streamAllElems(doc).filter(e -> e.getTagName().equals("e1")).count()),
-                () -> assertEquals(3, streamAllElems(doc).filter(e -> e.getTagName().equals("e2")).count())
+                () -> assertEquals(3, streamAllElems(doc).filter(e -> e.getTagName().equals("e2")).count()),
+                () -> assertEquals(
+                        List.of("root", "e1", "e1", "e2", "e2", "e2"),
+                        streamAllElems(doc).map(Element::getTagName).toList()
+                )
         );
     }
 
