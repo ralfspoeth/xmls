@@ -8,7 +8,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
-import static io.github.ralfspoeth.xmls.Queries.attribute;
+import static io.github.ralfspoeth.xmls.XmlQueries.attribute;
 
 /**
  * The class contains static methods

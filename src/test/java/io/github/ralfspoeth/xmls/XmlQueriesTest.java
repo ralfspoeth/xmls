@@ -7,10 +7,10 @@ import org.w3c.dom.Element;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
-import static io.github.ralfspoeth.xmls.Queries.*;
+import static io.github.ralfspoeth.xmls.XmlQueries.*;
 import static org.junit.jupiter.api.Assertions.*;
 
-class QueriesTest extends BaseTest {
+class XmlQueriesTest extends BaseTest {
 
 
     @Test

@@ -9,8 +9,8 @@ import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.function.Function;
 
-public class Queries {
-    private Queries() {
+public class XmlQueries {
+    private XmlQueries() {
     }
 
     static Function<Element, Attr> attribute(String name) {
