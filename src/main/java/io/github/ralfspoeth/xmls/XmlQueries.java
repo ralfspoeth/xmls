@@ -2,23 +2,24 @@ package io.github.ralfspoeth.xmls;
 
 import org.w3c.dom.Attr;
 import org.w3c.dom.Element;
+import org.w3c.dom.NodeList;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.Optional;
+import java.util.Map;
 import java.util.function.Function;
+import java.util.stream.Collectors;
+
+import static io.github.ralfspoeth.xmls.XmlFunctions.attribute;
+import static java.util.Optional.ofNullable;
 
 public class XmlQueries {
     private XmlQueries() {
     }
 
-    static Function<Element, Attr> attribute(String name) {
-        return e -> e.getAttributeNode(name);
-    }
-
     static int intValue(Attr attribute, int def) {
-        return Optional.ofNullable(attribute)
+        return ofNullable(attribute)
                 .stream()
                 .map(Attr::getValue)
                 .mapToInt(Integer::parseInt)
@@ -27,7 +28,7 @@ public class XmlQueries {
     }
 
     static long longValue(Attr attribute, long def) {
-        return Optional.ofNullable(attribute)
+        return ofNullable(attribute)
                 .stream()
                 .map(Attr::getValue)
                 .mapToLong(Long::parseLong)
@@ -36,7 +37,7 @@ public class XmlQueries {
     }
 
     static double doubleValue(Attr attribute, double def) {
-        return Optional.ofNullable(attribute)
+        return ofNullable(attribute)
                 .stream()
                 .map(Attr::getValue)
                 .mapToDouble(Double::parseDouble)
@@ -45,7 +46,7 @@ public class XmlQueries {
     }
 
     static BigDecimal decimalValue(Attr attribute, BigDecimal def) {
-        return Optional.ofNullable(attribute)
+        return ofNullable(attribute)
                 .stream()
                 .map(Attr::getValue)
                 .map(BigDecimal::new)
@@ -54,7 +55,7 @@ public class XmlQueries {
     }
 
     static String stringValue(Attr attribute, String def) {
-        return Optional.ofNullable(attribute)
+        return ofNullable(attribute)
                 .stream()
                 .map(Attr::getValue)
                 .findFirst()
@@ -62,7 +63,7 @@ public class XmlQueries {
     }
 
     static LocalDateTime dateTimeValue(Attr attribute, LocalDateTime def) {
-        return Optional.ofNullable(attribute)
+        return ofNullable(attribute)
                 .stream()
                 .map(Attr::getValue)
                 .map(LocalDateTime::parse)
@@ -71,7 +72,7 @@ public class XmlQueries {
     }
 
     static boolean booleanValue(Attr attribute, boolean def) {
-        return Optional.ofNullable(attribute)
+        return ofNullable(attribute)
                 .stream()
                 .map(Attr::getValue)
                 .map(Boolean::parseBoolean)
@@ -80,11 +81,26 @@ public class XmlQueries {
     }
 
     static LocalDate dateValue(Attr attribute, LocalDate def) {
-        return Optional.ofNullable(attribute)
+        return ofNullable(attribute)
                 .stream()
                 .map(Attr::getValue)
                 .map(LocalDate::parse)
                 .findFirst()
                 .orElse(def);
+    }
+
+    static Map<String, Element> index(NodeList nl, Function<Element, String> indexBy) {
+        return XmlStreams.stream(nl)
+                .filter(Element.class::isInstance)
+                .map(Element.class::cast)
+                .collect(Collectors.toMap(indexBy, Function.identity()));
+    }
+
+    static Map<String, Element> index(NodeList nl, String attrName) {
+        return index(nl, attribute(attrName)
+                        .andThen(an -> ofNullable(an)
+                                .map(Attr::getValue)
+                                .orElseThrow())
+        );
     }
 }
