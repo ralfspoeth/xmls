@@ -1,10 +1,14 @@
 package io.github.ralfspoeth.xmls;
 
 import org.junit.jupiter.api.Test;
+import org.w3c.dom.Attr;
 import org.w3c.dom.Element;
 
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
+import static io.github.ralfspoeth.xmls.XmlStreams.attributes;
 import static io.github.ralfspoeth.xmls.XmlStreams.streamAllElems;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -56,6 +60,23 @@ class XmlStreamsTest extends BaseTest {
                         List.of("root", "e1", "e1", "e2", "e2", "e2"),
                         streamAllElems(doc).map(Element::getTagName).toList()
                 )
+        );
+    }
+
+
+    @Test
+    void testAttributes() throws Exception {
+        var src = """
+                <?xml version='1.0'?>
+                <root a='1' b='2' c='3'/>
+                """;
+        var doc = parseString(src);
+        assertAll(
+                () -> assertTrue(Set.of("a", "b", "c").containsAll(attributes(doc.getDocumentElement()).map(Attr::getName).toList())),
+                () -> assertTrue(Set.of("1", "2", "3").containsAll(attributes(doc.getDocumentElement()).map(Attr::getValue).toList())),
+                () -> assertTrue(attributes(doc.getDocumentElement()).allMatch(a -> a.getValue().equals(
+                                Map.of("a", "1", "b", "2", "c", "3").get(a.getName()))
+                ))
         );
     }
 

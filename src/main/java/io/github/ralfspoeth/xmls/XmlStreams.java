@@ -35,6 +35,10 @@ public class XmlStreams {
         );
     }
 
+    static Stream<Attr> attributes(Node elem) {
+        return stream(elem.getAttributes());
+    }
+
     static Stream<Node> stream(NodeList nl) {
         return StreamSupport.stream(Spliterators.spliterator(new Iterator<>() {
                     private int index = 0;

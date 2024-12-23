@@ -9,8 +9,8 @@ public class XmlFunctions {
     // prevent instantiation
     private XmlFunctions() {}
 
-
     static Function<Element, Attr> attribute(String name) {
         return e -> e.getAttributeNode(name);
     }
+
 }
