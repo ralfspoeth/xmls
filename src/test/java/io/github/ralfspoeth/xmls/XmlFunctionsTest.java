@@ -6,10 +6,12 @@ import org.w3c.dom.Element;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Stream;
 
+import static io.github.ralfspoeth.xmls.XmlFunctions.index;
 import static io.github.ralfspoeth.xmls.XmlStreams.attributes;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -46,12 +48,18 @@ class XmlFunctionsTest extends BaseTest {
         Attr b = root.getAttributeNode("b");
         // then
         assertAll(
-                () -> assertEquals(10, XmlFunctions.intValue(a, 0)),
-                () -> assertEquals(10L, XmlFunctions.longValue(a, 0L)),
-                () -> assertEquals(10d, XmlFunctions.doubleValue(a, 0d)),
-                () -> assertEquals(BigDecimal.TEN, XmlFunctions.decimalValue(a, BigDecimal.ZERO)),
-                () -> assertTrue(XmlFunctions.booleanValue(b, false)),
-                () -> assertEquals("true", XmlFunctions.stringValue(b, ""))
+                () -> assertEquals(10, XmlFunctions.intValue(a)),
+                () -> assertEquals(10, XmlFunctions.intValue(a, 1)),
+                () -> assertEquals(10L, XmlFunctions.longValue(a)),
+                () -> assertEquals(10L, XmlFunctions.longValue(a, 1L)),
+                () -> assertEquals(10d, XmlFunctions.doubleValue(a)),
+                () -> assertEquals(10d, XmlFunctions.doubleValue(a, 2d)),
+                () -> assertEquals(BigDecimal.TEN, XmlFunctions.decimalValue(a)),
+                () -> assertEquals(BigDecimal.TEN, XmlFunctions.decimalValue(a, BigDecimal.ONE)),
+                () -> assertTrue(XmlFunctions.booleanValue(b)),
+                () -> assertTrue(XmlFunctions.booleanValue(b, true)),
+                () -> assertEquals("true", XmlFunctions.stringValue(b)),
+                () -> assertEquals("true", XmlFunctions.stringValue(b, "TRUE"))
         );
     }
 
@@ -70,12 +78,12 @@ class XmlFunctionsTest extends BaseTest {
         assertAll(
                 () -> assertEquals(
                         LocalDate.of(2024, 10, 24),
-                        XmlFunctions.dateValue(d, null)
+                        XmlFunctions.dateValue(d, LocalDate.now())
                 ),
                 () -> assertEquals(
                         LocalDate.of(2024, 10, 24)
                                 .atTime(12, 34, 56),
-                        XmlFunctions.dateTimeValue(t, null)
+                        XmlFunctions.dateTimeValue(t, LocalDateTime.now())
                 )
         );
     }
@@ -93,6 +101,25 @@ class XmlFunctionsTest extends BaseTest {
                 () -> assertTrue(attributes(doc.getDocumentElement()).allMatch(a -> a.getValue().equals(
                         Map.of("a", "1", "b", "2", "c", "3").get(a.getName()))
                 ))
+        );
+    }
+
+    @Test
+    void testIndexAttrName() throws Exception{
+        var src = """
+                <?xml version='1.0'?>
+                <root>
+                   <x a='1'/>
+                   <y a='2'/>
+                   <z a='3'/>
+                </root>
+                """;
+        var doc = parseString(src);
+        var map = index(doc.getDocumentElement().getChildNodes(), "a");
+        assertAll(
+                () -> assertEquals("x", map.get("1").getTagName()),
+                () -> assertEquals("y", map.get("2").getTagName()),
+                () -> assertEquals("z", map.get("3").getTagName())
         );
     }
 }

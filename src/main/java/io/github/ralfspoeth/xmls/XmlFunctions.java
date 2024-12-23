@@ -11,6 +11,7 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import static io.github.ralfspoeth.xmls.XmlStreams.stream;
 import static java.util.Optional.ofNullable;
 
 public class XmlFunctions {
@@ -30,6 +31,10 @@ public class XmlFunctions {
                 .orElse(def);
     }
 
+    static int intValue(Attr attribute) {
+        return intValue(attribute, 0);
+    }
+
     static long longValue(Attr attribute, long def) {
         return ofNullable(attribute)
                 .stream()
@@ -37,6 +42,10 @@ public class XmlFunctions {
                 .mapToLong(Long::parseLong)
                 .findFirst()
                 .orElse(def);
+    }
+
+    static long longValue(Attr attribute) {
+        return longValue(attribute, 0L);
     }
 
     static double doubleValue(Attr attribute, double def) {
@@ -48,6 +57,10 @@ public class XmlFunctions {
                 .orElse(def);
     }
 
+    static double doubleValue(Attr attribute) {
+        return doubleValue(attribute, 0d);
+    }
+
     static BigDecimal decimalValue(Attr attribute, BigDecimal def) {
         return ofNullable(attribute)
                 .stream()
@@ -57,12 +70,20 @@ public class XmlFunctions {
                 .orElse(def);
     }
 
+    static BigDecimal decimalValue(Attr attribute) {
+        return decimalValue(attribute, BigDecimal.ZERO);
+    }
+
     static String stringValue(Attr attribute, String def) {
         return ofNullable(attribute)
                 .stream()
                 .map(Attr::getValue)
                 .findFirst()
                 .orElse(def);
+    }
+
+    static String stringValue(Attr attribute) {
+        return stringValue(attribute, "");
     }
 
     static LocalDateTime dateTimeValue(Attr attribute, LocalDateTime def) {
@@ -83,6 +104,10 @@ public class XmlFunctions {
                 .orElse(def);
     }
 
+    static boolean booleanValue(Attr attribute) {
+        return booleanValue(attribute, false);
+    }
+
     static LocalDate dateValue(Attr attribute, LocalDate def) {
         return ofNullable(attribute)
                 .stream()
@@ -93,7 +118,7 @@ public class XmlFunctions {
     }
 
     static Map<String, Element> index(NodeList nl, Function<Element, String> indexBy) {
-        return XmlStreams.stream(nl)
+        return stream(nl)
                 .filter(Element.class::isInstance)
                 .map(Element.class::cast)
                 .collect(Collectors.toMap(indexBy, Function.identity()));
@@ -101,7 +126,7 @@ public class XmlFunctions {
 
     static Map<String, Element> index(NodeList nl, String attrName) {
         return index(nl, attribute(attrName)
-                .andThen(an -> ofNullable(an)
+                .andThen(a -> ofNullable(a)
                         .map(Attr::getValue)
                         .orElseThrow())
         );
