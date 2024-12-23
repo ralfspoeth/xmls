@@ -23,6 +23,7 @@ public class XmlStreams {
 
                     @Override
                     public boolean hasNext() {
+                        while(index < len && mn.item(index).getNodeType()!=Node.ATTRIBUTE_NODE) index++;
                         return index < len;
                     }
 

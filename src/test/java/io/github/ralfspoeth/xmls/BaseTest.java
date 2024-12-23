@@ -11,7 +11,7 @@ import javax.xml.parsers.ParserConfigurationException;
 import java.io.IOException;
 import java.io.StringReader;
 
-abstract class BaseTest {
+class BaseTest {
 
     private static final DocumentBuilderFactory DEFAULT_FACTORY = DocumentBuilderFactory.newDefaultInstance();
     private DocumentBuilder parser;
@@ -21,7 +21,7 @@ abstract class BaseTest {
     }
 
     @BeforeEach
-    void setUp() throws ParserConfigurationException {
+    void initParser() throws ParserConfigurationException {
         parser = DEFAULT_FACTORY.newDocumentBuilder();
     }
 
