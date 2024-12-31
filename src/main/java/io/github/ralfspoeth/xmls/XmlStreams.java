@@ -36,10 +36,23 @@ public class XmlStreams {
         );
     }
 
+    /**
+     * Returns a stream of {@link Attr attributes}.
+     *
+     * @param elem the element node for which we need to have the attributes
+     * @return a stream which reports all attribute child nodes of the elem.
+     */
     static Stream<Attr> attributes(Node elem) {
         return stream(elem.getAttributes());
     }
 
+    /**
+     * Turns a {@link NodeList list} of nodes
+     * into a {@link Stream} of nodes.
+     *
+     * @param nl a nodelist
+     * @return a sequential stream of nodes ordered as the given nodelist
+     */
     static Stream<Node> stream(NodeList nl) {
         return StreamSupport.stream(Spliterators.spliterator(new Iterator<>() {
                     private int index = 0;

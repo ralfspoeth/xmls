@@ -18,8 +18,29 @@ public class XmlFunctions {
     // prevent instantiation
     private XmlFunctions() {}
 
+
+    /**
+     * Create a function which returns the {@link Attr} attribute
+     * named {@code name} when applied to an {@link Element}
+     * @param name the unqualified name of the attribute
+     * @return a function when applied to an element returns the attribute identified by the given unqualified name,
+     * may be {@code null}
+     */
     static Function<Element, Attr> attribute(String name) {
         return e -> e.getAttributeNode(name);
+    }
+
+    /**
+     * Similar to {@link #attribute(String)} but using namespace-qualified
+     * attribute names.
+     *
+     * @param ns the namespace URI
+     * @param localName the local name
+     * @return a function when applied to an element returns the attribute identified by the given qualified name,
+     * may be {@code null}
+     */
+    static Function<Element, Attr> attribute(String ns, String localName) {
+        return e -> e.getAttributeNodeNS(ns, localName);
     }
 
     static int intValue(Attr attribute, int def) {
@@ -117,7 +138,7 @@ public class XmlFunctions {
                 .orElse(def);
     }
 
-    static Map<String, Element> index(NodeList nl, Function<Element, String> indexBy) {
+    static <T> Map<T, Element> index(NodeList nl, Function<Element, T> indexBy) {
         return stream(nl)
                 .filter(Element.class::isInstance)
                 .map(Element.class::cast)
