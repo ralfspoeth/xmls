@@ -15,7 +15,7 @@ public class XmlStreams {
     private XmlStreams() {
     }
 
-    static Stream<Attr> stream(NamedNodeMap mn) {
+    public static Stream<Attr> stream(NamedNodeMap mn) {
         final int len = mn.getLength();
         return StreamSupport.stream(
                 Spliterators.spliterator(new Iterator<>() {
@@ -42,7 +42,7 @@ public class XmlStreams {
      * @param elem the element node for which we need to have the attributes
      * @return a stream which reports all attribute child nodes of the elem.
      */
-    static Stream<Attr> attributes(Node elem) {
+    public static Stream<Attr> attributes(Node elem) {
         return stream(elem.getAttributes());
     }
 
@@ -53,7 +53,7 @@ public class XmlStreams {
      * @param nl a nodelist
      * @return a sequential stream of nodes ordered as the given nodelist
      */
-    static Stream<Node> stream(NodeList nl) {
+    public static Stream<Node> stream(NodeList nl) {
         return StreamSupport.stream(Spliterators.spliterator(new Iterator<>() {
                     private int index = 0;
 
@@ -70,13 +70,13 @@ public class XmlStreams {
         );
     }
 
-    static Stream<Element> streamElemsOf(Element elem, String tagName) {
+    public static Stream<Element> streamElemsOf(Element elem, String tagName) {
         return stream(elem.getChildNodes()).filter(n -> n.getNodeType() == Node.ELEMENT_NODE)
                 .filter(e -> e.getNodeName().equals(tagName))
                 .map(Element.class::cast);
     }
 
-    static Stream<Element> streamElemsOf(Element elem, String tag1, String... moreTags) {
+    public static Stream<Element> streamElemsOf(Element elem, String tag1, String... moreTags) {
         Stream<Element> str = streamElemsOf(elem, tag1);
         for (String tag : moreTags) {
             str = str.flatMap(e -> streamElemsOf(e, tag));
@@ -84,7 +84,7 @@ public class XmlStreams {
         return str;
     }
 
-    static Stream<Element> streamAllElems(Document doc) {
+    public static Stream<Element> streamAllElems(Document doc) {
         return stream(doc.getElementsByTagName("*")).map(Element.class::cast);
     }
 }
