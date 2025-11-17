@@ -1,8 +1,8 @@
 package io.github.ralfspoeth.xmls;
 
+import org.jspecify.annotations.Nullable;
 import org.w3c.dom.Attr;
 import org.w3c.dom.Element;
-import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
 import java.math.BigDecimal;
@@ -15,7 +15,7 @@ import java.util.stream.Collectors;
 
 import static io.github.ralfspoeth.xmls.XmlStreams.stream;
 import static java.util.Optional.ofNullable;
-import static java.util.function.Predicate.not;
+import static java.util.function.Function.identity;
 
 public class XmlFunctions {
     // prevent instantiation
@@ -35,127 +35,82 @@ public class XmlFunctions {
         return e -> ofNullable(e.getAttributeNode(name));
     }
 
-    /**
-     * Similar to {@link #attribute(String)} but using namespace-qualified
-     * attribute names.
-     *
-     * @param ns        the namespace URI
-     * @param localName the local name
-     * @return a function when applied to an element returns the attribute identified by the given qualified name,
-     * may be {@code null}
-     */
-    public static Function<Element, Optional<Attr>> attribute(String ns, String localName) {
-        return e -> ofNullable(e.getAttributeNodeNS(ns, localName));
-    }
-
-    public static int intValue(Attr attribute, int def) {
-        return Optional.of(attribute)
-                .stream()
+    public static int intValue(@Nullable Attr attribute, int def) {
+        return ofNullable(attribute)
                 .map(Attr::getValue)
-                .mapToInt(Integer::parseInt)
-                .findFirst()
+                .map(Integer::parseInt)
                 .orElse(def);
     }
 
-    public static int intValue(Attr attribute) {
+    public static int intValue(@Nullable Attr attribute) {
         return intValue(attribute, 0);
     }
 
-    public static long longValue(Attr attribute, long def) {
-        return Optional.of(attribute)
-                .stream()
+    public static long longValue(@Nullable Attr attribute, long def) {
+        return ofNullable(attribute)
                 .map(Attr::getValue)
-                .mapToLong(Long::parseLong)
-                .findFirst()
+                .map(Long::parseLong)
                 .orElse(def);
     }
 
-    public static long longValue(Attr attribute) {
+    public static long longValue(@Nullable Attr attribute) {
         return longValue(attribute, 0L);
     }
 
-    public static double doubleValue(Attr attribute, double def) {
-        return Optional.of(attribute)
-                .stream()
+    public static double doubleValue(@Nullable Attr attribute, double def) {
+        return ofNullable(attribute)
                 .map(Attr::getValue)
-                .mapToDouble(Double::parseDouble)
-                .findFirst()
+                .map(Double::parseDouble)
                 .orElse(def);
     }
 
-    public static double doubleValue(Attr attribute) {
+    public static double doubleValue(@Nullable Attr attribute) {
         return doubleValue(attribute, 0d);
     }
 
-    public static BigDecimal decimalValue(Attr attribute, BigDecimal def) {
-        return Optional.of(attribute)
-                .stream()
+    public static BigDecimal decimalValue(@Nullable Attr attribute, BigDecimal def) {
+        return ofNullable(attribute)
                 .map(Attr::getValue)
                 .map(BigDecimal::new)
-                .findFirst()
                 .orElse(def);
     }
 
-    public static BigDecimal decimalValue(Attr attribute) {
+    public static BigDecimal decimalValue(@Nullable Attr attribute) {
         return decimalValue(attribute, BigDecimal.ZERO);
     }
 
-    public static String stringValue(Attr attribute, String def) {
-        return Optional.of(attribute)
-                .stream()
+    public static String stringValue(@Nullable Attr attribute, String def) {
+        return ofNullable(attribute)
                 .map(Attr::getValue)
-                .findFirst()
                 .orElse(def);
     }
 
-    /**
-     * Join the trimmed, non-blank node value of each child node
-     * with a single space character as delimiter.
-     *
-     * @param node the node the text content of which is to be extracted.
-     * @param delimiter the delimiter for the join operation
-     * @return the joined string
-     */
-    public static String concatTextNodes(Node node, String delimiter) {
-        return stream(node.getChildNodes())
-                .map(Node::getNodeValue)
-                .map(String::trim)
-                .filter(not(String::isBlank))
-                .collect(Collectors.joining(delimiter));
-    }
-
-    public static String stringValue(Attr attribute) {
+    public static String stringValue(@Nullable Attr attribute) {
         return stringValue(attribute, "");
     }
 
-    public static LocalDateTime dateTimeValue(Attr attribute, LocalDateTime def) {
-        return Optional.of(attribute)
-                .stream()
+    public static LocalDateTime dateTimeValue(@Nullable Attr attribute, LocalDateTime def) {
+        return ofNullable(attribute)
                 .map(Attr::getValue)
                 .map(LocalDateTime::parse)
-                .findFirst()
                 .orElse(def);
     }
 
-    public static boolean booleanValue(Attr attribute, boolean def) {
-        return Optional.of(attribute)
-                .stream()
+    public static boolean booleanValue(@Nullable Attr attribute, boolean def) {
+        return ofNullable(attribute)
                 .map(Attr::getValue)
                 .map(Boolean::parseBoolean)
-                .findFirst()
                 .orElse(def);
     }
 
-    public static boolean booleanValue(Attr attribute) {
+    public static boolean booleanValue(@Nullable Attr attribute) {
         return booleanValue(attribute, false);
     }
 
-    public static LocalDate dateValue(Attr attribute, LocalDate def) {
-        return Optional.of(attribute)
-                .stream()
+    public static LocalDate dateValue(@Nullable Attr attribute, LocalDate def) {
+        return ofNullable(attribute)
                 .map(Attr::getValue)
                 .map(LocalDate::parse)
-                .findFirst()
                 .orElse(def);
     }
 
@@ -171,7 +126,7 @@ public class XmlFunctions {
         return stream(nl)
                 .filter(Element.class::isInstance)
                 .map(Element.class::cast)
-                .collect(Collectors.toMap(indexBy, Function.identity()));
+                .collect(Collectors.toMap(indexBy, identity()));
     }
 
     /**

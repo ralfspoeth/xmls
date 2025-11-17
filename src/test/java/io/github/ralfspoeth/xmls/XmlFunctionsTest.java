@@ -12,7 +12,7 @@ import java.util.Optional;
 import java.util.Set;
 
 import static io.github.ralfspoeth.xmls.XmlFunctions.index;
-import static io.github.ralfspoeth.xmls.XmlStreams.attributes;
+import static io.github.ralfspoeth.xmls.XmlStreams.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 class XmlFunctionsTest extends BaseTest {
@@ -32,7 +32,6 @@ class XmlFunctionsTest extends BaseTest {
                 )
         );
     }
-
 
     @Test
     void testNumericValues() throws Exception {

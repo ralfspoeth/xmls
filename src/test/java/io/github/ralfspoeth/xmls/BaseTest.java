@@ -1,6 +1,5 @@
 package io.github.ralfspoeth.xmls;
 
-import org.junit.jupiter.api.BeforeEach;
 import org.w3c.dom.Document;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
@@ -14,15 +13,29 @@ import java.io.StringReader;
 class BaseTest {
 
     private static final DocumentBuilderFactory DEFAULT_FACTORY = DocumentBuilderFactory.newDefaultInstance();
-    private DocumentBuilder parser;
+    private final DocumentBuilder parser;
 
-    Document parseString(String src) throws IOException, SAXException {
-        return parser.parse(new InputSource(new StringReader(src)));
+    BaseTest() {
+        try {
+            parser = DEFAULT_FACTORY.newDocumentBuilder();
+        } catch (ParserConfigurationException e) {
+            throw new AssertionError(e);
+        }
     }
 
-    @BeforeEach
-    void initParser() throws ParserConfigurationException {
-        parser = DEFAULT_FACTORY.newDocumentBuilder();
+    /**
+     * Parse a text into a document instance.
+     *
+     * @param src the source text
+     * @return the document object
+     * @throws SAXException whenever the parser throws
+     */
+    public Document parseString(String src) throws SAXException {
+        try {
+            return parser.parse(new InputSource(new StringReader(src)));
+        } catch (IOException e) {
+            throw new AssertionError(e);
+        }
     }
 
 }
