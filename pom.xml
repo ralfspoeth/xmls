@@ -7,7 +7,7 @@
     <parent>
         <groupId>io.github.ralfspoeth</groupId>
         <artifactId>plumbum</artifactId>
-        <version>1.2</version>
+        <version>1.4.14</version>
     </parent>
 
     <artifactId>xmls</artifactId>
@@ -84,6 +84,12 @@
         </plugins>
     </build>
     <dependencies>
+        <!-- jspecify nullness annotations -->
+        <dependency>
+            <groupId>org.jspecify</groupId>
+            <artifactId>jspecify</artifactId>
+            <version>1.0.0</version>
+        </dependency>
         <!-- testing -->
         <dependency>
             <groupId>org.junit.jupiter</groupId>

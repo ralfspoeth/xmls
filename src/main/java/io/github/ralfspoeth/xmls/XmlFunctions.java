@@ -9,6 +9,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -30,8 +31,8 @@ public class XmlFunctions {
      * @return a function when applied to an element returns the attribute identified by the given unqualified name,
      * may be {@code null}
      */
-    public static Function<Element, Attr> attribute(String name) {
-        return e -> e.getAttributeNode(name);
+    public static Function<Element, Optional<Attr>>attribute(String name) {
+        return e -> ofNullable(e.getAttributeNode(name));
     }
 
     /**
@@ -43,12 +44,12 @@ public class XmlFunctions {
      * @return a function when applied to an element returns the attribute identified by the given qualified name,
      * may be {@code null}
      */
-    public static Function<Element, Attr> attribute(String ns, String localName) {
-        return e -> e.getAttributeNodeNS(ns, localName);
+    public static Function<Element, Optional<Attr>> attribute(String ns, String localName) {
+        return e -> ofNullable(e.getAttributeNodeNS(ns, localName));
     }
 
     public static int intValue(Attr attribute, int def) {
-        return ofNullable(attribute)
+        return Optional.of(attribute)
                 .stream()
                 .map(Attr::getValue)
                 .mapToInt(Integer::parseInt)
@@ -61,7 +62,7 @@ public class XmlFunctions {
     }
 
     public static long longValue(Attr attribute, long def) {
-        return ofNullable(attribute)
+        return Optional.of(attribute)
                 .stream()
                 .map(Attr::getValue)
                 .mapToLong(Long::parseLong)
@@ -74,7 +75,7 @@ public class XmlFunctions {
     }
 
     public static double doubleValue(Attr attribute, double def) {
-        return ofNullable(attribute)
+        return Optional.of(attribute)
                 .stream()
                 .map(Attr::getValue)
                 .mapToDouble(Double::parseDouble)
@@ -87,7 +88,7 @@ public class XmlFunctions {
     }
 
     public static BigDecimal decimalValue(Attr attribute, BigDecimal def) {
-        return ofNullable(attribute)
+        return Optional.of(attribute)
                 .stream()
                 .map(Attr::getValue)
                 .map(BigDecimal::new)
@@ -100,7 +101,7 @@ public class XmlFunctions {
     }
 
     public static String stringValue(Attr attribute, String def) {
-        return ofNullable(attribute)
+        return Optional.of(attribute)
                 .stream()
                 .map(Attr::getValue)
                 .findFirst()
@@ -128,7 +129,7 @@ public class XmlFunctions {
     }
 
     public static LocalDateTime dateTimeValue(Attr attribute, LocalDateTime def) {
-        return ofNullable(attribute)
+        return Optional.of(attribute)
                 .stream()
                 .map(Attr::getValue)
                 .map(LocalDateTime::parse)
@@ -137,7 +138,7 @@ public class XmlFunctions {
     }
 
     public static boolean booleanValue(Attr attribute, boolean def) {
-        return ofNullable(attribute)
+        return Optional.of(attribute)
                 .stream()
                 .map(Attr::getValue)
                 .map(Boolean::parseBoolean)
@@ -150,7 +151,7 @@ public class XmlFunctions {
     }
 
     public static LocalDate dateValue(Attr attribute, LocalDate def) {
-        return ofNullable(attribute)
+        return Optional.of(attribute)
                 .stream()
                 .map(Attr::getValue)
                 .map(LocalDate::parse)
@@ -202,9 +203,7 @@ public class XmlFunctions {
      */
     public static Map<String, Element> index(NodeList nl, String attrName) {
         return index(nl, attribute(attrName)
-                .andThen(a -> ofNullable(a)
-                        .map(Attr::getValue)
-                        .orElseThrow())
+                .andThen(a -> a.map(Attr::getValue).orElseThrow())
         );
     }
 }
