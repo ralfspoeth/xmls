@@ -8,8 +8,8 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Stream;
 
 import static io.github.ralfspoeth.xmls.XmlFunctions.index;
 import static io.github.ralfspoeth.xmls.XmlStreams.attributes;
@@ -25,9 +25,8 @@ class XmlFunctionsTest extends BaseTest {
                 """;
         var doc = parseString(src);
         assertAll(
-                () -> assertEquals("2", Stream.of(doc.getDocumentElement())
-                        .map(XmlFunctions.attribute("b"))
-                        .findFirst()
+                () -> assertEquals("2", Optional.of(doc.getDocumentElement())
+                        .flatMap(XmlFunctions.attribute("b"))
                         .map(Attr::getValue)
                         .orElseThrow()
                 )
