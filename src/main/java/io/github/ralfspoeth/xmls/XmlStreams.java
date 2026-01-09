@@ -85,6 +85,16 @@ public class XmlStreams {
         );
     }
 
+    public static Stream<Node> children(Node elem) {
+        return stream(elem.getChildNodes());
+    }
+
+    public static Stream<Element> elements(Node elem) {
+        return children(elem)
+                .filter(n -> n.getNodeType() == Node.ELEMENT_NODE)
+                .map(Element.class::cast);
+    }
+
     /**
      * The direct child elements of the given element node identified by
      * tag (or node) name.
