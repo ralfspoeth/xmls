@@ -12,13 +12,13 @@ import java.util.Optional;
 import java.util.Set;
 
 import static io.github.ralfspoeth.xmls.XmlFunctions.index;
-import static io.github.ralfspoeth.xmls.XmlStreams.*;
+import static io.github.ralfspoeth.xmls.XmlStreams.attributes;
 import static org.junit.jupiter.api.Assertions.*;
 
 class XmlFunctionsTest extends BaseTest {
 
     @Test
-    void attributeTest() throws Exception{
+    void attributeTest() throws Exception {
         var src = """
                 <?xml version='1.0'?>
                 <root a='1' b='2' c="2"/>
@@ -46,23 +46,23 @@ class XmlFunctionsTest extends BaseTest {
         Attr b = root.getAttributeNode("b");
         // then
         assertAll(
-                () -> assertEquals(10, XmlFunctions.intValue(a)),
-                () -> assertEquals(10, XmlFunctions.intValue(a, 1)),
-                () -> assertEquals(10L, XmlFunctions.longValue(a)),
-                () -> assertEquals(10L, XmlFunctions.longValue(a, 1L)),
-                () -> assertEquals(10d, XmlFunctions.doubleValue(a)),
-                () -> assertEquals(10d, XmlFunctions.doubleValue(a, 2d)),
-                () -> assertEquals(BigDecimal.TEN, XmlFunctions.decimalValue(a)),
-                () -> assertEquals(BigDecimal.TEN, XmlFunctions.decimalValue(a, BigDecimal.ONE)),
-                () -> assertTrue(XmlFunctions.booleanValue(b)),
-                () -> assertTrue(XmlFunctions.booleanValue(b, true)),
-                () -> assertEquals("true", XmlFunctions.stringValue(b)),
-                () -> assertEquals("true", XmlFunctions.stringValue(b, "TRUE"))
+                () -> assertEquals(10, XmlFunctions.intValue(a).orElseThrow()),
+                () -> assertEquals(10, XmlFunctions.intValue(a).orElse(1)),
+                () -> assertEquals(10L, XmlFunctions.longValue(a).orElseThrow()),
+                () -> assertEquals(10L, XmlFunctions.longValue(a).orElse(1L)),
+                () -> assertEquals(10d, XmlFunctions.doubleValue(a).orElseThrow()),
+                () -> assertEquals(10d, XmlFunctions.doubleValue(a).orElse(2d)),
+                () -> assertEquals(BigDecimal.TEN, XmlFunctions.decimalValue(a).orElseThrow()),
+                () -> assertEquals(BigDecimal.TEN, XmlFunctions.decimalValue(a).orElse(BigDecimal.ONE)),
+                () -> assertTrue(XmlFunctions.booleanValue(b).orElseThrow()),
+                () -> assertTrue(XmlFunctions.booleanValue(b).orElse(Boolean.FALSE)),
+                () -> assertEquals("true", XmlFunctions.stringValue(b).orElseThrow()),
+                () -> assertEquals("true", XmlFunctions.stringValue(b).orElse("TRUE"))
         );
     }
 
     @Test
-    void  testDateTimeValues() throws Exception {
+    void testDateTimeValues() throws Exception {
         // given
         var src = """
                 <?xml version='1.0'?>
@@ -76,12 +76,12 @@ class XmlFunctionsTest extends BaseTest {
         assertAll(
                 () -> assertEquals(
                         LocalDate.of(2024, 10, 24),
-                        XmlFunctions.dateValue(d, LocalDate.now())
+                        XmlFunctions.dateValue(d).orElse(LocalDate.now())
                 ),
                 () -> assertEquals(
                         LocalDate.of(2024, 10, 24)
                                 .atTime(12, 34, 56),
-                        XmlFunctions.dateTimeValue(t, LocalDateTime.now())
+                        XmlFunctions.dateTimeValue(t).orElse(LocalDateTime.now())
                 )
         );
     }
@@ -103,7 +103,7 @@ class XmlFunctionsTest extends BaseTest {
     }
 
     @Test
-    void testIndexAttrName() throws Exception{
+    void testIndexAttrName() throws Exception {
         var src = """
                 <?xml version='1.0'?>
                 <root>

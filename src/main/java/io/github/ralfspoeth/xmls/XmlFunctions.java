@@ -8,8 +8,7 @@ import org.w3c.dom.NodeList;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -31,87 +30,58 @@ public class XmlFunctions {
      * @return a function when applied to an element returns the attribute identified by the given unqualified name,
      * may be {@code null}
      */
-    public static Function<Element, Optional<Attr>>attribute(String name) {
+    public static Function<Element, Optional<Attr>> attribute(String name) {
         return e -> ofNullable(e.getAttributeNode(name));
     }
 
-    public static int intValue(@Nullable Attr attribute, int def) {
+    public static OptionalInt intValue(@Nullable Attr attribute) {
         return ofNullable(attribute)
                 .map(Attr::getValue)
-                .map(Integer::parseInt)
-                .orElse(def);
+                .stream()
+                .mapToInt(Integer::parseInt)
+                .findAny();
     }
 
-    public static int intValue(@Nullable Attr attribute) {
-        return intValue(attribute, 0);
-    }
-
-    public static long longValue(@Nullable Attr attribute, long def) {
+    public static OptionalLong longValue(@Nullable Attr attribute) {
         return ofNullable(attribute)
                 .map(Attr::getValue)
-                .map(Long::parseLong)
-                .orElse(def);
+                .stream()
+                .mapToLong(Long::parseLong)
+                .findAny();
     }
 
-    public static long longValue(@Nullable Attr attribute) {
-        return longValue(attribute, 0L);
-    }
-
-    public static double doubleValue(@Nullable Attr attribute, double def) {
+    public static OptionalDouble doubleValue(@Nullable Attr attribute) {
         return ofNullable(attribute)
                 .map(Attr::getValue)
-                .map(Double::parseDouble)
-                .orElse(def);
+                .stream()
+                .mapToDouble(Double::parseDouble)
+                .findAny();
     }
 
-    public static double doubleValue(@Nullable Attr attribute) {
-        return doubleValue(attribute, 0d);
+    public static Optional<BigDecimal> decimalValue(@Nullable Attr attribute) {
+        return ofNullable(attribute).map(Attr::getValue).map(BigDecimal::new);
     }
 
-    public static BigDecimal decimalValue(@Nullable Attr attribute, BigDecimal def) {
+    public static Optional<String> stringValue(@Nullable Attr attribute) {
+        return ofNullable(attribute).map(Attr::getValue);
+    }
+
+    public static Optional<LocalDateTime> dateTimeValue(@Nullable Attr attribute) {
         return ofNullable(attribute)
                 .map(Attr::getValue)
-                .map(BigDecimal::new)
-                .orElse(def);
+                .map(LocalDateTime::parse);
     }
 
-    public static BigDecimal decimalValue(@Nullable Attr attribute) {
-        return decimalValue(attribute, BigDecimal.ZERO);
-    }
-
-    public static String stringValue(@Nullable Attr attribute, String def) {
+    public static Optional<Boolean> booleanValue(@Nullable Attr attribute) {
         return ofNullable(attribute)
                 .map(Attr::getValue)
-                .orElse(def);
+                .map(Boolean::parseBoolean);
     }
 
-    public static String stringValue(@Nullable Attr attribute) {
-        return stringValue(attribute, "");
-    }
-
-    public static LocalDateTime dateTimeValue(@Nullable Attr attribute, LocalDateTime def) {
+    public static Optional<LocalDate> dateValue(@Nullable Attr attribute) {
         return ofNullable(attribute)
                 .map(Attr::getValue)
-                .map(LocalDateTime::parse)
-                .orElse(def);
-    }
-
-    public static boolean booleanValue(@Nullable Attr attribute, boolean def) {
-        return ofNullable(attribute)
-                .map(Attr::getValue)
-                .map(Boolean::parseBoolean)
-                .orElse(def);
-    }
-
-    public static boolean booleanValue(@Nullable Attr attribute) {
-        return booleanValue(attribute, false);
-    }
-
-    public static LocalDate dateValue(@Nullable Attr attribute, LocalDate def) {
-        return ofNullable(attribute)
-                .map(Attr::getValue)
-                .map(LocalDate::parse)
-                .orElse(def);
+                .map(LocalDate::parse);
     }
 
     /**
