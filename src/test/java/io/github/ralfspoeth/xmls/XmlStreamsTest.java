@@ -5,8 +5,7 @@ import org.w3c.dom.Element;
 
 import java.util.List;
 
-import static io.github.ralfspoeth.xmls.XmlStreams.streamAllElems;
-import static io.github.ralfspoeth.xmls.XmlStreams.streamElemsOf;
+import static io.github.ralfspoeth.xmls.XmlStreams.elements;
 import static org.junit.jupiter.api.Assertions.*;
 
 class XmlStreamsTest extends BaseTest {
@@ -33,7 +32,7 @@ class XmlStreamsTest extends BaseTest {
     }
 
     @Test
-    void testStreamAllElems() throws Exception {
+    void testAllElements() throws Exception {
         // given
         var src = """
                 <?xml version='1.0'?>
@@ -49,13 +48,13 @@ class XmlStreamsTest extends BaseTest {
         var doc = parseString(src);
         // then
         assertAll(
-                () -> assertEquals(6, streamAllElems(doc).count()),
-                () -> assertEquals(1, streamAllElems(doc).filter(e -> e.getTagName().equals("root")).count()),
-                () -> assertEquals(2, streamAllElems(doc).filter(e -> e.getTagName().equals("e1")).count()),
-                () -> assertEquals(3, streamAllElems(doc).filter(e -> e.getTagName().equals("e2")).count()),
+                () -> assertEquals(6, XmlStreams.allElements(doc).count()),
+                () -> assertEquals(1, XmlStreams.allElements(doc).filter(e -> e.getTagName().equals("root")).count()),
+                () -> assertEquals(2, XmlStreams.allElements(doc).filter(e -> e.getTagName().equals("e1")).count()),
+                () -> assertEquals(3, XmlStreams.allElements(doc).filter(e -> e.getTagName().equals("e2")).count()),
                 () -> assertEquals(
                         List.of("root", "e1", "e1", "e2", "e2", "e2"),
-                        streamAllElems(doc).map(Element::getTagName).toList()
+                        XmlStreams.allElements(doc).map(Element::getTagName).toList()
                 )
         );
     }
@@ -79,11 +78,11 @@ class XmlStreamsTest extends BaseTest {
 
         // then
         assertAll(
-                () -> assertEquals(0, streamElemsOf(doc.getDocumentElement(), "root").toList().size()),
-                () -> assertEquals(2, streamElemsOf(doc.getDocumentElement(), "e1").toList().size()),
-                () -> assertEquals(3, streamElemsOf(doc.getDocumentElement(), "e1", "e2").toList().size()),
-                () -> assertEquals(0, streamElemsOf(doc.getDocumentElement(), "e1", "e2", "e3").toList().size()),
-                () -> assertEquals(0, streamElemsOf(doc.getDocumentElement(), "e1", "e2", "e3", "e4").toList().size())
+                () -> assertEquals(0, XmlStreams.elements(doc.getDocumentElement(), "root").toList().size()),
+                () -> assertEquals(2, XmlStreams.elements(doc.getDocumentElement(), "e1").toList().size()),
+                () -> assertEquals(3, elements(doc.getDocumentElement(), "e1", "e2").toList().size()),
+                () -> assertEquals(0, elements(doc.getDocumentElement(), "e1", "e2", "e3").toList().size()),
+                () -> assertEquals(0, elements(doc.getDocumentElement(), "e1", "e2", "e3", "e4").toList().size())
         );
 
     }

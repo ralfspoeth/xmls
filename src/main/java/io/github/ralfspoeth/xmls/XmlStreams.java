@@ -103,10 +103,9 @@ public class XmlStreams {
      * @param tagName the node or tag name of the child elements
      * @return the children als {@link Stream} of {@link Element}s.
      */
-    public static Stream<Element> streamElemsOf(Node elem, String tagName) {
-        return stream(elem.getChildNodes()).filter(n -> n.getNodeType() == Node.ELEMENT_NODE)
-                .filter(e -> e.getNodeName().equals(tagName))
-                .map(Element.class::cast);
+    public static Stream<Element> elements(Node elem, String tagName) {
+        return elements(elem)
+                .filter(e -> e.getNodeName().equals(tagName));
     }
 
     /**
@@ -128,7 +127,7 @@ public class XmlStreams {
      * then
      * {@snippet :
      * Element a = null; // @replace substring="null;" replacement="..."
-     * var l = XmlStreams.streamElemsOf(a, "b", "c").map(Node::getTextContent).map(String::trim).toList();
+     * var l = XmlStreams.elements(a, "b", "c").map(Node::getTextContent).map(String::trim).toList();
      * // l == ["1", "2"]
      *}
      *
@@ -137,10 +136,10 @@ public class XmlStreams {
      * @param moreTags zero or more tags
      * @return a stream of elements
      */
-    public static Stream<Element> streamElemsOf(Node elem, String tag1, String... moreTags) {
-        Stream<Element> str = streamElemsOf(elem, tag1);
+    public static Stream<Element> elements(Node elem, String tag1, String... moreTags) {
+        Stream<Element> str = elements(elem, tag1);
         for (String tag : moreTags) {
-            str = str.flatMap(e -> streamElemsOf(e, tag));
+            str = str.flatMap(e -> elements(e, tag));
         }
         return str;
     }
@@ -151,7 +150,7 @@ public class XmlStreams {
      * @param doc the document
      * @return a stream of all element nodes
      */
-    public static Stream<Element> streamAllElems(Document doc) {
+    public static Stream<Element> allElements(Document doc) {
         return stream(doc.getElementsByTagName("*")).map(Element.class::cast);
     }
 }
