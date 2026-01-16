@@ -5,7 +5,6 @@ import org.w3c.dom.Element;
 
 import java.util.List;
 
-import static io.github.ralfspoeth.xmls.XmlStreams.elements;
 import static org.junit.jupiter.api.Assertions.*;
 
 class XmlStreamsTest extends BaseTest {
@@ -21,8 +20,8 @@ class XmlStreamsTest extends BaseTest {
                 </root>
                 """;
         var doc = parseString(src);
-        var nl = doc.getDocumentElement().getChildNodes();
-        var sumN = XmlStreams.stream(nl)
+        var root = doc.getDocumentElement();
+        var sumN = XmlStreams.children(root)
                 .filter(Element.class::isInstance)
                 .map(Element.class::cast)
                 .map(e -> e.getAttribute("n"))
@@ -57,33 +56,5 @@ class XmlStreamsTest extends BaseTest {
                         XmlStreams.allElements(doc).map(Element::getTagName).toList()
                 )
         );
-    }
-
-    @Test
-    void testStream() throws Exception {
-        // given
-        var src = """
-                <?xml version='1.0'?>
-                <root>
-                    <e1 id='1'/>
-                    <e1 id='2'>
-                        <e2 id='3'/>
-                        <e2 id='4'/>
-                        <e2 id='5'/>
-                    </e1>
-                </root>""";
-
-        // when
-        var doc = parseString(src);
-
-        // then
-        assertAll(
-                () -> assertEquals(0, XmlStreams.elements(doc.getDocumentElement(), "root").toList().size()),
-                () -> assertEquals(2, XmlStreams.elements(doc.getDocumentElement(), "e1").toList().size()),
-                () -> assertEquals(3, elements(doc.getDocumentElement(), "e1", "e2").toList().size()),
-                () -> assertEquals(0, elements(doc.getDocumentElement(), "e1", "e2", "e3").toList().size()),
-                () -> assertEquals(0, elements(doc.getDocumentElement(), "e1", "e2", "e3", "e4").toList().size())
-        );
-
     }
 }

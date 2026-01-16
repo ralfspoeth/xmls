@@ -3,18 +3,16 @@ package io.github.ralfspoeth.xmls;
 import org.jspecify.annotations.Nullable;
 import org.w3c.dom.Attr;
 import org.w3c.dom.Element;
-import org.w3c.dom.NodeList;
+import org.w3c.dom.Node;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.function.Function;
-import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
-import static io.github.ralfspoeth.xmls.XmlStreams.stream;
 import static java.util.Optional.ofNullable;
-import static java.util.function.Function.identity;
 
 public class XmlFunctions {
     // prevent instantiation
@@ -34,6 +32,27 @@ public class XmlFunctions {
         return e -> ofNullable(e.getAttributeNode(name));
     }
 
+    /**
+     * Obtain a function which returns the child elements of the given node as
+     * a stream; to be used with {@link Stream#flatMap(Function)}.
+     *
+     * @param name the element (or tag) name
+     * @return a function
+     */
+    public static Function<Node, Stream<Element>> elements(String name) {
+        return n -> XmlStreams.children(n)
+                .filter(e -> e.getNodeName().equals(name))
+                .filter(Element.class::isInstance)
+                .map(Element.class::cast);
+    }
+
+    public static Function<Node, Stream<Node>> children(String name) {
+        return n -> XmlStreams.children(n).filter(e -> e.getNodeName().equals(name));
+    }
+
+    /**
+     * Parse into optional {@code int} value.
+     */
     public static OptionalInt intValue(@Nullable Attr attribute) {
         return ofNullable(attribute)
                 .map(Attr::getValue)
@@ -42,6 +61,9 @@ public class XmlFunctions {
                 .findAny();
     }
 
+    /**
+     * Parse into optional {@code long} value.
+     */
     public static OptionalLong longValue(@Nullable Attr attribute) {
         return ofNullable(attribute)
                 .map(Attr::getValue)
@@ -50,6 +72,9 @@ public class XmlFunctions {
                 .findAny();
     }
 
+    /**
+     * Parse into optional {@code double} value.
+     */
     public static OptionalDouble doubleValue(@Nullable Attr attribute) {
         return ofNullable(attribute)
                 .map(Attr::getValue)
@@ -58,26 +83,23 @@ public class XmlFunctions {
                 .findAny();
     }
 
+    /**
+     * Parse into optional {@link BigDecimal} value.
+     */
     public static Optional<BigDecimal> decimalValue(@Nullable Attr attribute) {
         return ofNullable(attribute).map(Attr::getValue).map(BigDecimal::new);
     }
 
+    /**
+     * Return as optional {@link String} value.
+     */
     public static Optional<String> stringValue(@Nullable Attr attribute) {
         return ofNullable(attribute).map(Attr::getValue);
     }
 
-    public static Optional<LocalDateTime> dateTimeValue(@Nullable Attr attribute) {
-        return ofNullable(attribute)
-                .map(Attr::getValue)
-                .map(LocalDateTime::parse);
-    }
-
-    public static Optional<Boolean> booleanValue(@Nullable Attr attribute) {
-        return ofNullable(attribute)
-                .map(Attr::getValue)
-                .map(Boolean::parseBoolean);
-    }
-
+    /**
+     * Parse into optional {@link LocalDate} value.
+     */
     public static Optional<LocalDate> dateValue(@Nullable Attr attribute) {
         return ofNullable(attribute)
                 .map(Attr::getValue)
@@ -85,50 +107,20 @@ public class XmlFunctions {
     }
 
     /**
-     * Create a map of keys - probably strings - to elements.
-     *
-     * @param nl      a node list
-     * @param indexBy a function the returns the key for each element node
-     * @param <T>     the type of the key
-     * @return the map
+     * Parse into optional {@link LocalDateTime} value.
      */
-    public static <T> Map<T, Element> index(NodeList nl, Function<Element, T> indexBy) {
-        return stream(nl)
-                .filter(Element.class::isInstance)
-                .map(Element.class::cast)
-                .collect(Collectors.toMap(indexBy, identity()));
+    public static Optional<LocalDateTime> dateTimeValue(@Nullable Attr attribute) {
+        return ofNullable(attribute)
+                .map(Attr::getValue)
+                .map(LocalDateTime::parse);
     }
 
     /**
-     * Create a map of the values of some attribute of each element node in the node list
-     * to the nodes of this list.
-     * Consider this snippet:
-     * {@snippet :
-     * import java.util.Map;
-     * import org.w3c.dom.Document;
-     * var xml = """
-     * <?xml version='1.0'?>
-     * <root>
-     * <e id='1'/>
-     * <e id='2'/>
-     * <e id='3'/>
-     * </root>
-     * """;
-     * // parse document
-     * Document doc = null; // @replace regex="null" replacement="parse(xml)"
-     * // index by attribute named id
-     * var indexedByAttributeID = index(doc.getDocumentElement().getElementsByTagName("e"), "id");
-     * // creates a map like this
-     * var result = Map.of("1", "<e id='1'/>", "2", "<e id='2'/>", "3", "<e id='3'/>");
-     *}
-     *
-     * @param nl       a node list
-     * @param attrName the attribute name
-     * @return a name of the values of a given attribute to the nodes
+     * Parse {@code "true} and {@code "false} into optional {@link Boolean} value.
      */
-    public static Map<String, Element> index(NodeList nl, String attrName) {
-        return index(nl, attribute(attrName)
-                .andThen(a -> a.map(Attr::getValue).orElseThrow())
-        );
+    public static Optional<Boolean> booleanValue(@Nullable Attr attribute) {
+        return ofNullable(attribute)
+                .map(Attr::getValue)
+                .map(Boolean::parseBoolean);
     }
 }

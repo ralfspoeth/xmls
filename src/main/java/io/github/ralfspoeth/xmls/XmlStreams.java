@@ -24,7 +24,7 @@ public class XmlStreams {
      *
      * @param mn the attributes map
      */
-    public static Stream<Attr> stream(NamedNodeMap mn) {
+    private static Stream<Attr> stream(NamedNodeMap mn) {
         final int len = mn.getLength();
         return StreamSupport.stream(
                 Spliterators.spliterator(
@@ -42,7 +42,7 @@ public class XmlStreams {
                             }
                         },
                         len,
-                        Spliterator.ORDERED | Spliterator.IMMUTABLE),
+                        Spliterator.ORDERED),
                 false
         );
     }
@@ -50,11 +50,12 @@ public class XmlStreams {
     /**
      * Returns a stream of {@link Attr attributes}.
      *
-     * @param elem the element node for which we need to have the attributes
-     * @return a stream which reports all attribute child nodes of the elem.
+     * @param node the element node for which we need to have the attributes
+     * @return a stream which reports all attribute child nodes of the node.
+     * @throws java.util.ConcurrentModificationException when the underlying document is changed.
      */
-    public static Stream<Attr> attributes(Node elem) {
-        return stream(elem.getAttributes());
+    public static Stream<Attr> attributes(Node node) {
+        return stream(node.getAttributes());
     }
 
     /**
@@ -63,8 +64,9 @@ public class XmlStreams {
      *
      * @param nl a nodelist
      * @return a sequential stream of nodes ordered as the given nodelist
+     * @throws java.util.ConcurrentModificationException when the underlying document is changed.
      */
-    public static Stream<Node> stream(NodeList nl) {
+    private static Stream<Node> stream(NodeList nl) {
         final int len = nl.getLength();
         return StreamSupport.stream(Spliterators.spliterator(
                 new Iterator<>() {
@@ -81,67 +83,20 @@ public class XmlStreams {
                     }
                 },
                 len,
-                Spliterator.ORDERED | Spliterator.IMMUTABLE), false
+                Spliterator.ORDERED), false
         );
     }
 
-    public static Stream<Node> children(Node elem) {
-        return stream(elem.getChildNodes());
-    }
-
-    public static Stream<Element> elements(Node elem) {
-        return children(elem)
-                .filter(n -> n.getNodeType() == Node.ELEMENT_NODE)
-                .map(Element.class::cast);
-    }
-
     /**
-     * The direct child elements of the given element node identified by
-     * tag (or node) name.
+     * Turns the {@link NodeList} of child nodes
+     * into a {@link Stream} of these nodes.
      *
-     * @param elem    the starting point for the search of the children
-     * @param tagName the node or tag name of the child elements
-     * @return the children als {@link Stream} of {@link Element}s.
+     * @param node a nodelist
+     * @return a sequential stream of nodes ordered as the given nodelist
+     * @throws java.util.ConcurrentModificationException when the underlying document is changed.
      */
-    public static Stream<Element> elements(Node elem, String tagName) {
-        return elements(elem)
-                .filter(e -> e.getNodeName().equals(tagName));
-    }
-
-    /**
-     * The leaf elements of the given starting point element node
-     * reachable by the path {@code tag1/moreTags[0]/.../moreTags[moreTags.length-]}.
-     * Given
-     * {@code
-     * <a>
-     * <b>
-     * <c>
-     * 1
-     * </c>
-     * <c>
-     * 2
-     * </c>
-     * </b>
-     * </a>
-     * }
-     * then
-     * {@snippet :
-     * Element a = null; // @replace substring="null;" replacement="..."
-     * var l = XmlStreams.elements(a, "b", "c").map(Node::getTextContent).map(String::trim).toList();
-     * // l == ["1", "2"]
-     *}
-     *
-     * @param elem     the starting point
-     * @param tag1     the mandatory first tag
-     * @param moreTags zero or more tags
-     * @return a stream of elements
-     */
-    public static Stream<Element> elements(Node elem, String tag1, String... moreTags) {
-        Stream<Element> str = elements(elem, tag1);
-        for (String tag : moreTags) {
-            str = str.flatMap(e -> elements(e, tag));
-        }
-        return str;
+    public static Stream<Node> children(Node node) {
+        return stream(node.getChildNodes());
     }
 
     /**

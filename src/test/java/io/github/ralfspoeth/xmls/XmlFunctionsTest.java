@@ -11,7 +11,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
-import static io.github.ralfspoeth.xmls.XmlFunctions.index;
 import static io.github.ralfspoeth.xmls.XmlStreams.attributes;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -99,25 +98,6 @@ class XmlFunctionsTest extends BaseTest {
                 () -> assertTrue(attributes(doc.getDocumentElement()).allMatch(a -> a.getValue().equals(
                         Map.of("a", "1", "b", "2", "c", "3").get(a.getName()))
                 ))
-        );
-    }
-
-    @Test
-    void testIndexAttrName() throws Exception {
-        var src = """
-                <?xml version='1.0'?>
-                <root>
-                   <x a='1'/>
-                   <y a='2'/>
-                   <z a='3'/>
-                </root>
-                """;
-        var doc = parseString(src);
-        var map = index(doc.getDocumentElement().getChildNodes(), "a");
-        assertAll(
-                () -> assertEquals("x", map.get("1").getTagName()),
-                () -> assertEquals("y", map.get("2").getTagName()),
-                () -> assertEquals("z", map.get("3").getTagName())
         );
     }
 }
