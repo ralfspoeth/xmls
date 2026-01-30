@@ -13,7 +13,7 @@ class XmlStreamsTest extends BaseTest {
     void testStreamNodeList() throws Exception {
         var src = """
                 <?xml version='1.0'?>
-                <root>
+                <root name='root'>
                     <node n='1'/>
                     <node n='2'/>
                     <node n='3'/>
@@ -21,7 +21,8 @@ class XmlStreamsTest extends BaseTest {
                 """;
         var doc = parseString(src);
         var root = doc.getDocumentElement();
-        var sumN = XmlStreams.children(root)
+        var sumN = XmlStreams.childNodes(root)
+                .peek(n -> System.out.println(n.getClass().getName() + ":" + n.getNodeName() + "/" +  n.getTextContent().trim()))
                 .filter(Element.class::isInstance)
                 .map(Element.class::cast)
                 .map(e -> e.getAttribute("n"))

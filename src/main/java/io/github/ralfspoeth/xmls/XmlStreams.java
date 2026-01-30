@@ -95,7 +95,7 @@ public class XmlStreams {
      * @return a sequential stream of nodes ordered as the given nodelist
      * @throws java.util.ConcurrentModificationException when the underlying document is changed.
      */
-    public static Stream<Node> children(Node node) {
+    public static Stream<Node> childNodes(Node node) {
         return stream(node.getChildNodes());
     }
 

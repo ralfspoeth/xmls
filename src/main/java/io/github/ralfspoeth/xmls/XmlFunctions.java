@@ -40,14 +40,14 @@ public class XmlFunctions {
      * @return a function
      */
     public static Function<Node, Stream<Element>> elements(String name) {
-        return n -> XmlStreams.children(n)
+        return n -> XmlStreams.childNodes(n)
                 .filter(e -> e.getNodeName().equals(name))
                 .filter(Element.class::isInstance)
                 .map(Element.class::cast);
     }
 
-    public static Function<Node, Stream<Node>> children(String name) {
-        return n -> XmlStreams.children(n).filter(e -> e.getNodeName().equals(name));
+    public static Function<Node, Stream<Node>> childrenNamed(String name) {
+        return n -> XmlStreams.childNodes(n).filter(e -> e.getNodeName().equals(name));
     }
 
     /**
