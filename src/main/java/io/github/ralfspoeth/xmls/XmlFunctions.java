@@ -33,15 +33,37 @@ public class XmlFunctions {
     }
 
     /**
+     * Same as {@link #attribute(String)} but with a namespace URI
+     *
+     * @param ns the namespace URI
+     * @param localName the local name
+     */
+    public static Function<Element, Optional<Attr>> attribute(String ns, String localName) {
+        return e -> ofNullable(e.getAttributeNodeNS(ns, localName));
+    }
+
+    /**
      * Obtain a function which returns the child elements of the given node as
      * a stream; to be used with {@link Stream#flatMap(Function)}.
      *
      * @param name the element (or tag) name
-     * @return a function
      */
     public static Function<Node, Stream<Element>> elements(String name) {
         return n -> XmlStreams.childNodes(n)
                 .filter(e -> e.getNodeName().equals(name))
+                .filter(Element.class::isInstance)
+                .map(Element.class::cast);
+    }
+
+    /**
+     * Same as {@link #elements(String)} but with a namespace URI.
+     * @param ns the namespace URI
+     * @param localName the local name
+     */
+    public static Function<Node, Stream<Element>> elements(String ns, String localName) {
+        return n -> XmlStreams.childNodes(n)
+                .filter(e -> e.getNodeName().equals(localName))
+                .filter(e -> e.getNamespaceURI().equals(ns))
                 .filter(Element.class::isInstance)
                 .map(Element.class::cast);
     }

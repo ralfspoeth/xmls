@@ -58,7 +58,7 @@ public class XmlStreams {
         return stream(node.getAttributes());
     }
 
-    /**
+    /*
      * Turns a {@link NodeList list} of nodes
      * into a {@link Stream} of nodes.
      *
