@@ -8,7 +8,10 @@ import org.w3c.dom.Node;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.Optional;
+import java.util.OptionalDouble;
+import java.util.OptionalInt;
+import java.util.OptionalLong;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
@@ -16,8 +19,7 @@ import static java.util.Optional.ofNullable;
 
 public class XmlFunctions {
     // prevent instantiation
-    private XmlFunctions() {
-    }
+    private XmlFunctions() {}
 
 
     /**
@@ -35,7 +37,7 @@ public class XmlFunctions {
     /**
      * Same as {@link #attribute(String)} but with a namespace URI
      *
-     * @param ns the namespace URI
+     * @param ns        the namespace URI
      * @param localName the local name
      */
     public static Function<Element, Optional<Attr>> attribute(String ns, String localName) {
@@ -57,7 +59,8 @@ public class XmlFunctions {
 
     /**
      * Same as {@link #elements(String)} but with a namespace URI.
-     * @param ns the namespace URI
+     *
+     * @param ns        the namespace URI
      * @param localName the local name
      */
     public static Function<Node, Stream<Element>> elements(String ns, String localName) {
