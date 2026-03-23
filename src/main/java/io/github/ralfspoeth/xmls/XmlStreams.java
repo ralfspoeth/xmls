@@ -26,25 +26,19 @@ public class XmlStreams {
      */
     private static Stream<Attr> stream(NamedNodeMap mn) {
         final int len = mn.getLength();
-        return StreamSupport.stream(
-                spliterator(
-                        new Iterator<>() {
-                            int index = 0;
+        return StreamSupport.stream(spliterator(new Iterator<>() {
+            int index = 0;
 
-                            @Override
-                            public boolean hasNext() {
-                                return index < len;
-                            }
+            @Override
+            public boolean hasNext() {
+                return index < len;
+            }
 
-                            @Override
-                            public Attr next() {
-                                return (Attr) mn.item(index++);
-                            }
-                        },
-                        len,
-                        Spliterator.ORDERED),
-                false
-        );
+            @Override
+            public Attr next() {
+                return (Attr) mn.item(index++);
+            }
+        }, len, Spliterator.ORDERED), false);
     }
 
     /**
@@ -68,24 +62,19 @@ public class XmlStreams {
      */
     private static Stream<Node> stream(NodeList nl) {
         final int len = nl.getLength();
-        return StreamSupport.stream(spliterator(
-                        new Iterator<>() {
-                            private int index = 0;
+        return StreamSupport.stream(spliterator(new Iterator<>() {
+            private int index = 0;
 
-                            @Override
-                            public boolean hasNext() {
-                                return index < len;
-                            }
+            @Override
+            public boolean hasNext() {
+                return index < len;
+            }
 
-                            @Override
-                            public Node next() {
-                                return nl.item(index++);
-                            }
-                        },
-                        len,
-                        Spliterator.ORDERED
-                ), false
-        );
+            @Override
+            public Node next() {
+                return nl.item(index++);
+            }
+        }, len, Spliterator.ORDERED), false);
     }
 
     /**

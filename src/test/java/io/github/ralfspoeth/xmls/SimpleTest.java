@@ -9,7 +9,6 @@ import java.io.IOException;
 import java.util.stream.Stream;
 
 import static io.github.ralfspoeth.xmls.XmlFunctions.*;
-import static io.github.ralfspoeth.xmls.XmlStreams.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 class SimpleTest extends BaseTest {
