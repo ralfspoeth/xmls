@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<!--
+ simple XML file with no DTD, no XSD, no namespaces
+ -->
+<root>
+    <!-- three empty elements with an id attribute -->
+    <a id="1"/>
+    <a id="2"/>
+    <a id="3"/>
+    <!-- hierarchy /root/b/c/d/{e|f|g|h|i|} -->
+    <b>
+        <c>
+            <d>
+                <e>1234</e>
+                <f>1234.56</f>
+                <g>2025-12-30</g>
+                <h>2025-12-30T23:45:56</h>
+                <i>text</i>
+            </d>
+        </c>
+    </b>
+</root>

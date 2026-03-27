@@ -3,24 +3,23 @@ package io.github.ralfspoeth.xmls;
 import org.jspecify.annotations.Nullable;
 import org.w3c.dom.Attr;
 import org.w3c.dom.Element;
-import org.w3c.dom.NodeList;
+import org.w3c.dom.Node;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.Map;
 import java.util.Optional;
+import java.util.OptionalDouble;
+import java.util.OptionalInt;
+import java.util.OptionalLong;
 import java.util.function.Function;
-import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
-import static io.github.ralfspoeth.xmls.XmlStreams.stream;
 import static java.util.Optional.ofNullable;
-import static java.util.function.Function.identity;
 
 public class XmlFunctions {
     // prevent instantiation
-    private XmlFunctions() {
-    }
+    private XmlFunctions() {}
 
 
     /**
@@ -31,134 +30,122 @@ public class XmlFunctions {
      * @return a function when applied to an element returns the attribute identified by the given unqualified name,
      * may be {@code null}
      */
-    public static Function<Element, Optional<Attr>>attribute(String name) {
+    public static Function<Element, Optional<Attr>> attribute(String name) {
         return e -> ofNullable(e.getAttributeNode(name));
     }
 
-    public static int intValue(@Nullable Attr attribute, int def) {
-        return ofNullable(attribute)
-                .map(Attr::getValue)
-                .map(Integer::parseInt)
-                .orElse(def);
-    }
-
-    public static int intValue(@Nullable Attr attribute) {
-        return intValue(attribute, 0);
-    }
-
-    public static long longValue(@Nullable Attr attribute, long def) {
-        return ofNullable(attribute)
-                .map(Attr::getValue)
-                .map(Long::parseLong)
-                .orElse(def);
-    }
-
-    public static long longValue(@Nullable Attr attribute) {
-        return longValue(attribute, 0L);
-    }
-
-    public static double doubleValue(@Nullable Attr attribute, double def) {
-        return ofNullable(attribute)
-                .map(Attr::getValue)
-                .map(Double::parseDouble)
-                .orElse(def);
-    }
-
-    public static double doubleValue(@Nullable Attr attribute) {
-        return doubleValue(attribute, 0d);
-    }
-
-    public static BigDecimal decimalValue(@Nullable Attr attribute, BigDecimal def) {
-        return ofNullable(attribute)
-                .map(Attr::getValue)
-                .map(BigDecimal::new)
-                .orElse(def);
-    }
-
-    public static BigDecimal decimalValue(@Nullable Attr attribute) {
-        return decimalValue(attribute, BigDecimal.ZERO);
-    }
-
-    public static String stringValue(@Nullable Attr attribute, String def) {
-        return ofNullable(attribute)
-                .map(Attr::getValue)
-                .orElse(def);
-    }
-
-    public static String stringValue(@Nullable Attr attribute) {
-        return stringValue(attribute, "");
-    }
-
-    public static LocalDateTime dateTimeValue(@Nullable Attr attribute, LocalDateTime def) {
-        return ofNullable(attribute)
-                .map(Attr::getValue)
-                .map(LocalDateTime::parse)
-                .orElse(def);
-    }
-
-    public static boolean booleanValue(@Nullable Attr attribute, boolean def) {
-        return ofNullable(attribute)
-                .map(Attr::getValue)
-                .map(Boolean::parseBoolean)
-                .orElse(def);
-    }
-
-    public static boolean booleanValue(@Nullable Attr attribute) {
-        return booleanValue(attribute, false);
-    }
-
-    public static LocalDate dateValue(@Nullable Attr attribute, LocalDate def) {
-        return ofNullable(attribute)
-                .map(Attr::getValue)
-                .map(LocalDate::parse)
-                .orElse(def);
+    /**
+     * Same as {@link #attribute(String)} but with a namespace URI
+     *
+     * @param ns        the namespace URI
+     * @param localName the local name
+     */
+    public static Function<Element, Optional<Attr>> attribute(String ns, String localName) {
+        return e -> ofNullable(e.getAttributeNodeNS(ns, localName));
     }
 
     /**
-     * Create a map of keys - probably strings - to elements.
+     * Obtain a function which returns the child elements of the given node as
+     * a stream; to be used with {@link Stream#flatMap(Function)}.
      *
-     * @param nl      a node list
-     * @param indexBy a function the returns the key for each element node
-     * @param <T>     the type of the key
-     * @return the map
+     * @param name the element (or tag) name
      */
-    public static <T> Map<T, Element> index(NodeList nl, Function<Element, T> indexBy) {
-        return stream(nl)
+    public static Function<Node, Stream<Element>> elements(String name) {
+        return n -> XmlStreams.childNodes(n)
+                .filter(e -> e.getNodeName().equals(name))
                 .filter(Element.class::isInstance)
-                .map(Element.class::cast)
-                .collect(Collectors.toMap(indexBy, identity()));
+                .map(Element.class::cast);
     }
 
     /**
-     * Create a map of the values of some attribute of each element node in the node list
-     * to the nodes of this list.
-     * Consider this snippet:
-     * {@snippet :
-     * import java.util.Map;
-     * import org.w3c.dom.Document;
-     * var xml = """
-     * <?xml version='1.0'?>
-     * <root>
-     * <e id='1'/>
-     * <e id='2'/>
-     * <e id='3'/>
-     * </root>
-     * """;
-     * // parse document
-     * Document doc = null; // @replace regex="null" replacement="parse(xml)"
-     * // index by attribute named id
-     * var indexedByAttributeID = index(doc.getDocumentElement().getElementsByTagName("e"), "id");
-     * // creates a map like this
-     * var result = Map.of("1", "<e id='1'/>", "2", "<e id='2'/>", "3", "<e id='3'/>");
-     *}
+     * Same as {@link #elements(String)} but with a namespace URI.
      *
-     * @param nl       a node list
-     * @param attrName the attribute name
-     * @return a name of the values of a given attribute to the nodes
+     * @param ns        the namespace URI
+     * @param localName the local name
      */
-    public static Map<String, Element> index(NodeList nl, String attrName) {
-        return index(nl, attribute(attrName)
-                .andThen(a -> a.map(Attr::getValue).orElseThrow())
-        );
+    public static Function<Node, Stream<Element>> elements(String ns, String localName) {
+        return n -> XmlStreams.childNodes(n)
+                .filter(e -> e.getNodeName().equals(localName))
+                .filter(e -> e.getNamespaceURI().equals(ns))
+                .filter(Element.class::isInstance)
+                .map(Element.class::cast);
+    }
+
+    public static Function<Node, Stream<Node>> childrenNamed(String name) {
+        return n -> XmlStreams.childNodes(n).filter(e -> e.getNodeName().equals(name));
+    }
+
+    /**
+     * Parse into optional {@code int} value.
+     */
+    public static OptionalInt intValue(@Nullable Attr attribute) {
+        return ofNullable(attribute)
+                .map(Attr::getValue)
+                .stream()
+                .mapToInt(Integer::parseInt)
+                .findAny();
+    }
+
+    /**
+     * Parse into optional {@code long} value.
+     */
+    public static OptionalLong longValue(@Nullable Attr attribute) {
+        return ofNullable(attribute)
+                .map(Attr::getValue)
+                .stream()
+                .mapToLong(Long::parseLong)
+                .findAny();
+    }
+
+    /**
+     * Parse into optional {@code double} value.
+     */
+    public static OptionalDouble doubleValue(@Nullable Attr attribute) {
+        return ofNullable(attribute)
+                .map(Attr::getValue)
+                .stream()
+                .mapToDouble(Double::parseDouble)
+                .findAny();
+    }
+
+    /**
+     * Parse into optional {@link BigDecimal} value.
+     */
+    public static Optional<BigDecimal> decimalValue(@Nullable Attr attribute) {
+        return ofNullable(attribute).map(Attr::getValue).map(BigDecimal::new);
+    }
+
+    /**
+     * Return as optional {@link String} value.
+     */
+    public static Optional<String> stringValue(@Nullable Attr attribute) {
+        return ofNullable(attribute).map(Attr::getValue);
+    }
+
+    /**
+     * Parse into optional {@link LocalDate} value.
+     */
+    public static Optional<LocalDate> dateValue(@Nullable Attr attribute) {
+        return ofNullable(attribute)
+                .map(Attr::getValue)
+                .map(LocalDate::parse);
+    }
+
+    /**
+     * Parse into optional {@link LocalDateTime} value.
+     */
+    public static Optional<LocalDateTime> dateTimeValue(@Nullable Attr attribute) {
+        return ofNullable(attribute)
+                .map(Attr::getValue)
+                .map(LocalDateTime::parse);
+    }
+
+    /**
+     * Parse {@code "true} and {@code "false} into optional {@link Boolean} value.
+     */
+    public static Optional<Boolean> booleanValue(@Nullable Attr attribute) {
+        return ofNullable(attribute)
+                .map(Attr::getValue)
+                .map(Boolean::parseBoolean);
     }
 }

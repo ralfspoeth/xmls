@@ -2,9 +2,13 @@ package io.github.ralfspoeth.xmls;
 
 import org.w3c.dom.*;
 
-import java.util.*;
+import java.util.Iterator;
+import java.util.Spliterator;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
+
+import static java.util.Spliterators.spliterator;
+
 
 /**
  * The class contains static methods
@@ -12,79 +16,86 @@ import java.util.stream.StreamSupport;
  */
 public class XmlStreams {
     // prevent instantiation
-    private XmlStreams() {
-    }
+    private XmlStreams() {}
 
-    public static Stream<Attr> stream(NamedNodeMap mn) {
+    /**
+     * Turns a {@link NamedNodeMap} into a
+     * {@link Stream} of {@link Attr}ibutes.
+     *
+     * @param mn the attributes map
+     */
+    private static Stream<Attr> stream(NamedNodeMap mn) {
         final int len = mn.getLength();
-        return StreamSupport.stream(
-                Spliterators.spliterator(new Iterator<>() {
-                    int index = 0;
+        return StreamSupport.stream(spliterator(new Iterator<>() {
+            int index = 0;
 
-                    @Override
-                    public boolean hasNext() {
-                        while(index < len && mn.item(index).getNodeType()!=Node.ATTRIBUTE_NODE) index++;
-                        return index < len;
-                    }
+            @Override
+            public boolean hasNext() {
+                return index < len;
+            }
 
-                    @Override
-                    public Attr next() {
-                        return (Attr) mn.item(index++);
-                    }
-                }, len, 0),
-                false
-        );
+            @Override
+            public Attr next() {
+                return (Attr) mn.item(index++);
+            }
+        }, len, Spliterator.ORDERED), false);
     }
 
     /**
      * Returns a stream of {@link Attr attributes}.
      *
-     * @param elem the element node for which we need to have the attributes
-     * @return a stream which reports all attribute child nodes of the elem.
+     * @param node the element node for which we need to have the attributes
+     * @return a stream which reports all attribute child nodes of the node.
+     * @throws java.util.ConcurrentModificationException when the underlying document is changed.
      */
-    public static Stream<Attr> attributes(Node elem) {
-        return stream(elem.getAttributes());
+    public static Stream<Attr> attributes(Node node) {
+        return stream(node.getAttributes());
     }
 
-    /**
+    /*
      * Turns a {@link NodeList list} of nodes
      * into a {@link Stream} of nodes.
      *
      * @param nl a nodelist
      * @return a sequential stream of nodes ordered as the given nodelist
+     * @throws java.util.ConcurrentModificationException when the underlying document is changed.
      */
-    public static Stream<Node> stream(NodeList nl) {
-        return StreamSupport.stream(Spliterators.spliterator(new Iterator<>() {
-                    private int index = 0;
+    private static Stream<Node> stream(NodeList nl) {
+        final int len = nl.getLength();
+        return StreamSupport.stream(spliterator(new Iterator<>() {
+            private int index = 0;
 
-                    @Override
-                    public boolean hasNext() {
-                        return index < nl.getLength();
-                    }
+            @Override
+            public boolean hasNext() {
+                return index < len;
+            }
 
-                    @Override
-                    public Node next() {
-                        return nl.item(index++);
-                    }
-                }, nl.getLength(), Spliterator.ORDERED | Spliterator.IMMUTABLE), false
-        );
+            @Override
+            public Node next() {
+                return nl.item(index++);
+            }
+        }, len, Spliterator.ORDERED), false);
     }
 
-    public static Stream<Element> streamElemsOf(Element elem, String tagName) {
-        return stream(elem.getChildNodes()).filter(n -> n.getNodeType() == Node.ELEMENT_NODE)
-                .filter(e -> e.getNodeName().equals(tagName))
-                .map(Element.class::cast);
+    /**
+     * Turns the {@link NodeList} of child nodes
+     * into a {@link Stream} of these nodes.
+     *
+     * @param node a nodelist
+     * @return a sequential stream of nodes ordered as the given nodelist
+     * @throws java.util.ConcurrentModificationException when the underlying document is changed.
+     */
+    public static Stream<Node> childNodes(Node node) {
+        return stream(node.getChildNodes());
     }
 
-    public static Stream<Element> streamElemsOf(Element elem, String tag1, String... moreTags) {
-        Stream<Element> str = streamElemsOf(elem, tag1);
-        for (String tag : moreTags) {
-            str = str.flatMap(e -> streamElemsOf(e, tag));
-        }
-        return str;
-    }
-
-    public static Stream<Element> streamAllElems(Document doc) {
+    /**
+     * provide each and every element node of a document.
+     *
+     * @param doc the document
+     * @return a stream of all element nodes
+     */
+    public static Stream<Element> allElements(Document doc) {
         return stream(doc.getElementsByTagName("*")).map(Element.class::cast);
     }
 }

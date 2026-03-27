@@ -38,4 +38,16 @@ class BaseTest {
         }
     }
 
+    /**
+     * Parse a resource
+     * into a document instance.
+     *
+     * @param path the path to the resource
+     * @return the document object
+     * @throws SAXException rethrown from the parser
+     * @throws IOException rethrown from the parser
+     */
+    public Document parseResource(String path) throws SAXException, IOException {
+        return parser.parse(new InputSource(getClass().getResourceAsStream(path)));
+    }
 }
