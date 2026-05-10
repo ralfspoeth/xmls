@@ -55,7 +55,7 @@ public class XmlFunctions {
     public static Function<Node, Stream<Element>> elements(String name) {
         return n -> XmlStreams.childNodes(n)
                 .filter(Element.class::isInstance)
-                .filter(e -> e.getLocalName().equals(name))
+                .filter(e -> e.getNodeName().equals(name))
                 .map(Element.class::cast);
     }
 
