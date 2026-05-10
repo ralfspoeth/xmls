@@ -38,7 +38,7 @@ public class XmlStreams {
             public Attr next() {
                 return (Attr) mn.item(index++);
             }
-        }, len, Spliterator.ORDERED), false);
+        }, len, Spliterator.ORDERED | Spliterator.NONNULL | Spliterator.IMMUTABLE), false);
     }
 
     /**
@@ -49,7 +49,7 @@ public class XmlStreams {
      * @throws java.util.ConcurrentModificationException when the underlying document is changed.
      */
     public static Stream<Attr> attributes(Node node) {
-        return stream(node.getAttributes());
+        return node.getAttributes()!=null?stream(node.getAttributes()):Stream.empty();
     }
 
     /*
@@ -58,7 +58,6 @@ public class XmlStreams {
      *
      * @param nl a nodelist
      * @return a sequential stream of nodes ordered as the given nodelist
-     * @throws java.util.ConcurrentModificationException when the underlying document is changed.
      */
     private static Stream<Node> stream(NodeList nl) {
         final int len = nl.getLength();
@@ -74,7 +73,7 @@ public class XmlStreams {
             public Node next() {
                 return nl.item(index++);
             }
-        }, len, Spliterator.ORDERED), false);
+        }, len, Spliterator.ORDERED | Spliterator.NONNULL | Spliterator.IMMUTABLE), false);
     }
 
     /**
@@ -83,7 +82,6 @@ public class XmlStreams {
      *
      * @param node a nodelist
      * @return a sequential stream of nodes ordered as the given nodelist
-     * @throws java.util.ConcurrentModificationException when the underlying document is changed.
      */
     public static Stream<Node> childNodes(Node node) {
         return stream(node.getChildNodes());

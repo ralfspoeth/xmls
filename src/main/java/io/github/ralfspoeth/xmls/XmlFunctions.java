@@ -8,6 +8,8 @@ import org.w3c.dom.Node;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.ZonedDateTime;
 import java.util.Optional;
 import java.util.OptionalDouble;
 import java.util.OptionalInt;
@@ -52,8 +54,8 @@ public class XmlFunctions {
      */
     public static Function<Node, Stream<Element>> elements(String name) {
         return n -> XmlStreams.childNodes(n)
-                .filter(e -> e.getNodeName().equals(name))
                 .filter(Element.class::isInstance)
+                .filter(e -> e.getLocalName().equals(name))
                 .map(Element.class::cast);
     }
 
@@ -71,12 +73,25 @@ public class XmlFunctions {
                 .map(Element.class::cast);
     }
 
+    /**
+     * Obtain a function which returns the child nodes of the given node whose
+     * node name equals the given {@code name}, regardless of node type.
+     *
+     * @param name the node name to match
+     * @return a function that, when applied to a node, returns a stream of its
+     * matching children
+     */
     public static Function<Node, Stream<Node>> childrenNamed(String name) {
         return n -> XmlStreams.childNodes(n).filter(e -> e.getNodeName().equals(name));
     }
 
     /**
      * Parse into optional {@code int} value.
+     *
+     * @param attribute the attribute to read; may be {@code null}, in which case
+     *                  an empty {@link OptionalInt} is returned
+     * @return the parsed value, or an empty optional if {@code attribute} is {@code null}
+     * @throws NumberFormatException if the attribute value is non-null but not a valid {@code int}
      */
     public static OptionalInt intValue(@Nullable Attr attribute) {
         return ofNullable(attribute)
@@ -88,6 +103,11 @@ public class XmlFunctions {
 
     /**
      * Parse into optional {@code long} value.
+     *
+     * @param attribute the attribute to read; may be {@code null}, in which case
+     *                  an empty {@link OptionalLong} is returned
+     * @return the parsed value, or an empty optional if {@code attribute} is {@code null}
+     * @throws NumberFormatException if the attribute value is non-null but not a valid {@code long}
      */
     public static OptionalLong longValue(@Nullable Attr attribute) {
         return ofNullable(attribute)
@@ -99,6 +119,11 @@ public class XmlFunctions {
 
     /**
      * Parse into optional {@code double} value.
+     *
+     * @param attribute the attribute to read; may be {@code null}, in which case
+     *                  an empty {@link OptionalDouble} is returned
+     * @return the parsed value, or an empty optional if {@code attribute} is {@code null}
+     * @throws NumberFormatException if the attribute value is non-null but not a valid {@code double}
      */
     public static OptionalDouble doubleValue(@Nullable Attr attribute) {
         return ofNullable(attribute)
@@ -110,6 +135,10 @@ public class XmlFunctions {
 
     /**
      * Parse into optional {@link BigDecimal} value.
+     *
+     * @param attribute the attribute to read; may be {@code null}
+     * @return the parsed value, or an empty optional if {@code attribute} is {@code null}
+     * @throws NumberFormatException if the attribute value is non-null but not a valid {@link BigDecimal}
      */
     public static Optional<BigDecimal> decimalValue(@Nullable Attr attribute) {
         return ofNullable(attribute).map(Attr::getValue).map(BigDecimal::new);
@@ -117,13 +146,22 @@ public class XmlFunctions {
 
     /**
      * Return as optional {@link String} value.
+     *
+     * @param attribute the attribute to read; may be {@code null}
+     * @return the attribute value, or an empty optional if {@code attribute} is {@code null}
      */
     public static Optional<String> stringValue(@Nullable Attr attribute) {
         return ofNullable(attribute).map(Attr::getValue);
     }
 
     /**
-     * Parse into optional {@link LocalDate} value.
+     * Parse into optional {@link LocalDate} value using the
+     * {@link java.time.format.DateTimeFormatter#ISO_LOCAL_DATE ISO_LOCAL_DATE} format
+     * (e.g. {@code 2024-10-24}).
+     *
+     * @param attribute the attribute to read; may be {@code null}
+     * @return the parsed date, or an empty optional if {@code attribute} is {@code null}
+     * @throws java.time.format.DateTimeParseException if the attribute value is non-null but cannot be parsed
      */
     public static Optional<LocalDate> dateValue(@Nullable Attr attribute) {
         return ofNullable(attribute)
@@ -132,7 +170,14 @@ public class XmlFunctions {
     }
 
     /**
-     * Parse into optional {@link LocalDateTime} value.
+     * Parse into optional {@link LocalDateTime} value using the
+     * {@link java.time.format.DateTimeFormatter#ISO_LOCAL_DATE_TIME ISO_LOCAL_DATE_TIME} format
+     * (e.g. {@code 2024-10-24T12:34:56}). This method does not accept timezone offsets;
+     * use {@link #offsetDateTimeValue(Attr)} or {@link #zonedDateTimeValue(Attr)} for those.
+     *
+     * @param attribute the attribute to read; may be {@code null}
+     * @return the parsed date-time, or an empty optional if {@code attribute} is {@code null}
+     * @throws java.time.format.DateTimeParseException if the attribute value is non-null but cannot be parsed
      */
     public static Optional<LocalDateTime> dateTimeValue(@Nullable Attr attribute) {
         return ofNullable(attribute)
@@ -141,11 +186,54 @@ public class XmlFunctions {
     }
 
     /**
-     * Parse {@code "true} and {@code "false} into optional {@link Boolean} value.
+     * Parse into optional {@link OffsetDateTime} value using the
+     * {@link java.time.format.DateTimeFormatter#ISO_OFFSET_DATE_TIME ISO_OFFSET_DATE_TIME} format
+     * (e.g. {@code 2024-10-24T12:34:56Z} or {@code 2024-10-24T12:34:56+02:00}).
+     * Suitable for {@code xs:dateTime} values that carry a timezone offset.
+     *
+     * @param attribute the attribute to read; may be {@code null}
+     * @return the parsed date-time, or an empty optional if {@code attribute} is {@code null}
+     * @throws java.time.format.DateTimeParseException if the attribute value is non-null but cannot be parsed
+     */
+    public static Optional<OffsetDateTime> offsetDateTimeValue(@Nullable Attr attribute) {
+        return ofNullable(attribute)
+                .map(Attr::getValue)
+                .map(OffsetDateTime::parse);
+    }
+
+    /**
+     * Parse into optional {@link ZonedDateTime} value using the
+     * {@link java.time.format.DateTimeFormatter#ISO_ZONED_DATE_TIME ISO_ZONED_DATE_TIME} format
+     * (e.g. {@code 2024-10-24T12:34:56+02:00[Europe/Berlin]}).
+     *
+     * @param attribute the attribute to read; may be {@code null}
+     * @return the parsed date-time, or an empty optional if {@code attribute} is {@code null}
+     * @throws java.time.format.DateTimeParseException if the attribute value is non-null but cannot be parsed
+     */
+    public static Optional<ZonedDateTime> zonedDateTimeValue(@Nullable Attr attribute) {
+        return ofNullable(attribute)
+                .map(Attr::getValue)
+                .map(ZonedDateTime::parse);
+    }
+
+    /**
+     * Parse into optional {@link Boolean} value following the {@code xs:boolean}
+     * lexical space: the literals {@code "true"} and {@code "1"} map to {@code true},
+     * {@code "false"} and {@code "0"} map to {@code false}. Parsing is case-sensitive,
+     * consistent with XML Schema.
+     *
+     * @param attribute the attribute to read; may be {@code null}
+     * @return the parsed value, or an empty optional if {@code attribute} is {@code null}
+     * @throws IllegalArgumentException if the attribute value is non-null but is not one of
+     *                                  {@code "true"}, {@code "false"}, {@code "1"}, or {@code "0"}
      */
     public static Optional<Boolean> booleanValue(@Nullable Attr attribute) {
         return ofNullable(attribute)
                 .map(Attr::getValue)
-                .map(Boolean::parseBoolean);
+                .map(v -> switch (v) {
+                    case "true", "1" -> Boolean.TRUE;
+                    case "false", "0" -> Boolean.FALSE;
+                    default -> throw new IllegalArgumentException("Not a valid xs:boolean literal: " + v);
+                });
     }
 }
