@@ -19,6 +19,17 @@ import java.util.stream.Stream;
 
 import static java.util.Optional.ofNullable;
 
+/**
+ * Utility class providing static factory methods for {@link Function}s that
+ * operate on DOM {@link Node}s and {@link Element}s, together with parsers
+ * that convert {@link Attr} values into typed {@link Optional} results.
+ *
+ * <p>The {@code Function}-returning methods are designed to be used with
+ * {@link Stream#map(Function)} and {@link Stream#flatMap(Function)} in
+ * combination with the streams produced by {@link XmlStreams}.</p>
+ *
+ * <p>This class is not intended to be instantiated.</p>
+ */
 public class XmlFunctions {
     // prevent instantiation
     private XmlFunctions() {}
@@ -37,10 +48,13 @@ public class XmlFunctions {
     }
 
     /**
-     * Same as {@link #attribute(String)} but with a namespace URI
+     * Same as {@link #attribute(String)} but with a namespace URI.
      *
      * @param ns        the namespace URI
      * @param localName the local name
+     * @return a function when applied to an element returns the attribute identified by the given
+     * namespace URI and local name, wrapped in an {@link Optional} which is empty if no such
+     * attribute exists
      */
     public static Function<Element, Optional<Attr>> attribute(String ns, String localName) {
         return e -> ofNullable(e.getAttributeNodeNS(ns, localName));
@@ -51,6 +65,8 @@ public class XmlFunctions {
      * a stream; to be used with {@link Stream#flatMap(Function)}.
      *
      * @param name the element (or tag) name
+     * @return a function that, when applied to a node, returns a stream of its child
+     * {@link Element}s whose node name equals {@code name}
      */
     public static Function<Node, Stream<Element>> elements(String name) {
         return n -> XmlStreams.childNodes(n)
@@ -64,6 +80,8 @@ public class XmlFunctions {
      *
      * @param ns        the namespace URI
      * @param localName the local name
+     * @return a function that, when applied to a node, returns a stream of its child
+     * {@link Element}s with the given namespace URI and local name
      */
     public static Function<Node, Stream<Element>> elements(String ns, String localName) {
         return n -> XmlStreams.childNodes(n)

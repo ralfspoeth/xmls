@@ -23,6 +23,7 @@ public class XmlStreams {
      * {@link Stream} of {@link Attr}ibutes.
      *
      * @param mn the attributes map
+     * @return a sequential stream of attributes ordered as in the given map
      */
     private static Stream<Attr> stream(NamedNodeMap mn) {
         final int len = mn.getLength();
@@ -52,7 +53,7 @@ public class XmlStreams {
         return node.getAttributes()!=null?stream(node.getAttributes()):Stream.empty();
     }
 
-    /*
+    /**
      * Turns a {@link NodeList list} of nodes
      * into a {@link Stream} of nodes.
      *
@@ -77,11 +78,11 @@ public class XmlStreams {
     }
 
     /**
-     * Turns the {@link NodeList} of child nodes
+     * Turns the {@link NodeList} of child nodes of the given {@link Node}
      * into a {@link Stream} of these nodes.
      *
-     * @param node a nodelist
-     * @return a sequential stream of nodes ordered as the given nodelist
+     * @param node the parent node whose child nodes are streamed
+     * @return a sequential stream of child nodes in document order
      */
     public static Stream<Node> childNodes(Node node) {
         return stream(node.getChildNodes());
