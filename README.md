@@ -37,7 +37,7 @@ Maven:
 <dependency>
     <groupId>io.github.ralfspoeth</groupId>
     <artifactId>xmls</artifactId>
-    <version>0.0.2</version>
+    <version>0.0.5</version>
 </dependency>
 ```
 
