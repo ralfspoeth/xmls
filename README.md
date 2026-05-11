@@ -199,7 +199,7 @@ descendantElements(root, "item")
 Namespace-aware lookup:
 
 ```java
-Document doc = Xml.parseNs(xmlString);
+Document doc = Xml.parseNameSpaced(xmlString);
 Element root = doc.getDocumentElement();
 
 Stream.of(root)
