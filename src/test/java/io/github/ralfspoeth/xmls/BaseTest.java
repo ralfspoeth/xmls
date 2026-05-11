@@ -13,12 +13,34 @@ import java.io.StringReader;
 class BaseTest {
 
     private static final DocumentBuilderFactory DEFAULT_FACTORY = DocumentBuilderFactory.newDefaultInstance();
+    private static final DocumentBuilderFactory NS_FACTORY;
+    static {
+        NS_FACTORY = DocumentBuilderFactory.newDefaultInstance();
+        NS_FACTORY.setNamespaceAware(true);
+    }
     private final DocumentBuilder parser;
+    private final DocumentBuilder nsParser;
 
     BaseTest() {
         try {
             parser = DEFAULT_FACTORY.newDocumentBuilder();
+            nsParser = NS_FACTORY.newDocumentBuilder();
         } catch (ParserConfigurationException e) {
+            throw new AssertionError(e);
+        }
+    }
+
+    /**
+     * Parse a text into a document instance using a namespace-aware parser.
+     *
+     * @param src the source text
+     * @return the document object
+     * @throws SAXException whenever the parser throws
+     */
+    public Document parseStringNs(String src) throws SAXException {
+        try {
+            return nsParser.parse(new InputSource(new StringReader(src)));
+        } catch (IOException e) {
             throw new AssertionError(e);
         }
     }

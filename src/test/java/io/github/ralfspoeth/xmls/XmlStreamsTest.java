@@ -32,6 +32,36 @@ class XmlStreamsTest extends BaseTest {
     }
 
     @Test
+    void testAttributesEmptyWhenNoAttributes() throws Exception {
+        // given
+        var src = """
+                <?xml version='1.0'?>
+                <root>
+                    <child/>
+                </root>
+                """;
+        // when
+        var doc = parseString(src);
+        var root = doc.getDocumentElement();
+        var child = XmlStreams.childNodes(root)
+                .filter(Element.class::isInstance)
+                .map(Element.class::cast)
+                .findFirst()
+                .orElseThrow();
+        // then
+        assertAll(
+                // an element without attributes yields an empty stream
+                () -> assertEquals(0L, XmlStreams.attributes(child).count()),
+                // a non-element node (text) reports no attributes (getAttributes() returns null)
+                () -> assertEquals(0L,
+                        XmlStreams.childNodes(root)
+                                .filter(n -> !(n instanceof Element))
+                                .flatMap(XmlStreams::attributes)
+                                .count())
+        );
+    }
+
+    @Test
     void testAllElements() throws Exception {
         // given
         var src = """
