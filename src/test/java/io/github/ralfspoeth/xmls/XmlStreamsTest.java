@@ -10,7 +10,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class XmlStreamsTest extends BaseTest {
 
     @Test
-    void testStreamNodeList() throws Exception {
+    void testStreamNodeList() {
         var src = """
                 <?xml version='1.0'?>
                 <root name='root'>
@@ -32,7 +32,7 @@ class XmlStreamsTest extends BaseTest {
     }
 
     @Test
-    void testAttributesEmptyWhenNoAttributes() throws Exception {
+    void testAttributesEmptyWhenNoAttributes() {
         // given
         var src = """
                 <?xml version='1.0'?>
@@ -62,7 +62,66 @@ class XmlStreamsTest extends BaseTest {
     }
 
     @Test
-    void testAllElements() throws Exception {
+    void testDescendantElements() {
+        // given
+        var src = """
+                <?xml version='1.0'?>
+                <root>
+                    <a>
+                        <b/>
+                        <b/>
+                    </a>
+                    <a>
+                        <c/>
+                    </a>
+                </root>""";
+        // when
+        var doc = parseString(src);
+        var root = doc.getDocumentElement();
+        // then
+        assertAll(
+                // 5 descendants of <root>: two <a>, two <b>, one <c>
+                () -> assertEquals(5L, XmlStreams.descendantElements(root).count()),
+                // by tag name
+                () -> assertEquals(2L, XmlStreams.descendantElements(root, "a").count()),
+                () -> assertEquals(2L, XmlStreams.descendantElements(root, "b").count()),
+                () -> assertEquals(1L, XmlStreams.descendantElements(root, "c").count()),
+                () -> assertEquals(0L, XmlStreams.descendantElements(root, "missing").count()),
+                // root itself is not included in its own descendants
+                () -> assertEquals(0L,
+                        XmlStreams.descendantElements(root, "root").count())
+        );
+    }
+
+    @Test
+    void testDescendantElementsNamespaced() {
+        // given
+        var src = """
+                <?xml version='1.0'?>
+                <root xmlns='http://example.com/default' xmlns:x='http://example.com/x'>
+                    <a>plain</a>
+                    <x:a>ns-1</x:a>
+                    <wrapper>
+                        <x:a>ns-2</x:a>
+                    </wrapper>
+                </root>""";
+        // when
+        var doc = parseStringNameSpaced(src);
+        var root = doc.getDocumentElement();
+        // then
+        assertAll(
+                () -> assertEquals(2L,
+                        XmlStreams.descendantElements(root, "http://example.com/x", "a").count()),
+                () -> assertEquals(1L,
+                        XmlStreams.descendantElements(root, "http://example.com/default", "a").count()),
+                // wildcard namespace matches both
+                () -> assertEquals(3L,
+                        XmlStreams.descendantElements(root, "*", "a").count())
+        );
+    }
+
+    @Test
+    void testAllElements() {
         // given
         var src = """
                 <?xml version='1.0'?>

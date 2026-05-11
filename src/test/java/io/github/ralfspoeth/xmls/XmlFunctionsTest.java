@@ -6,11 +6,7 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
-import java.time.ZonedDateTime;
+import java.time.*;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -23,7 +19,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class XmlFunctionsTest extends BaseTest {
 
     @Test
-    void attributeTest() throws Exception {
+    void attributeTest() {
         var src = """
                 <?xml version='1.0'?>
                 <root a='1' b='2' c="2"/>
@@ -39,7 +35,7 @@ class XmlFunctionsTest extends BaseTest {
     }
 
     @Test
-    void testNumericValues() throws Exception {
+    void testNumericValues() {
         // given
         var src = """
                 <?xml version='1.0'?>
@@ -67,7 +63,7 @@ class XmlFunctionsTest extends BaseTest {
     }
 
     @Test
-    void testDateTimeValues() throws Exception {
+    void testDateTimeValues() {
         // given
         var src = """
                 <?xml version='1.0'?>
@@ -92,7 +88,7 @@ class XmlFunctionsTest extends BaseTest {
     }
 
     @Test
-    void testAttributes() throws Exception {
+    void testAttributes() {
         var src = """
                 <?xml version='1.0'?>
                 <root a='1' b='2' c='3'/>
@@ -108,14 +104,14 @@ class XmlFunctionsTest extends BaseTest {
     }
 
     @Test
-    void testNamespacedAttribute() throws Exception {
+    void testNamespacedAttribute() {
         // given
         var src = """
                 <?xml version='1.0'?>
                 <root xmlns:x='http://example.com/x' x:a='1' a='2'/>
                 """;
         // when
-        var root = parseStringNs(src).getDocumentElement();
+        var root = parseStringNameSpaced(src).getDocumentElement();
         // then
         assertAll(
                 () -> assertEquals(
@@ -137,19 +133,21 @@ class XmlFunctionsTest extends BaseTest {
     }
 
     @Test
-    void testNamespacedElements() throws Exception {
-        // given: elements live in the default namespace, so their nodeName equals
-        // the local name — which is what XmlFunctions.elements(ns, localName) filters on.
+    void testNamespacedElements() {
+        // given: a mix of default-namespace and prefixed elements
         var src = """
                 <?xml version='1.0'?>
-                <root xmlns='http://example.com/default'>
+                <root xmlns='http://example.com/default' xmlns:x='http://example.com/x'>
                     <a>plain-1</a>
                     <a>plain-2</a>
+                    <x:a>ns-1</x:a>
+                    <x:a>ns-2</x:a>
+                    <x:a>ns-3</x:a>
                     <b>other</b>
                 </root>
                 """;
         // when
-        var root = parseStringNs(src).getDocumentElement();
+        var root = parseStringNameSpaced(src).getDocumentElement();
         // then
         assertAll(
                 () -> assertEquals(
@@ -158,10 +156,11 @@ class XmlFunctionsTest extends BaseTest {
                                 .flatMap(XmlFunctions.elements("http://example.com/default", "a"))
                                 .count()
                 ),
+                // prefixed elements are now matched by local name + namespace URI
                 () -> assertEquals(
-                        1L,
+                        3L,
                         Stream.of((Node) root)
-                                .flatMap(XmlFunctions.elements("http://example.com/default", "b"))
+                                .flatMap(XmlFunctions.elements("http://example.com/x", "a"))
                                 .count()
                 ),
                 // namespace that doesn't appear yields no matches
@@ -182,7 +181,130 @@ class XmlFunctionsTest extends BaseTest {
     }
 
     @Test
-    void testChildrenNamed() throws Exception {
+    void testAttributeValueShortcut() {
+        // given
+        var src = """
+                <?xml version='1.0'?>
+                <root a='1' b='2'/>
+                """;
+        var root = parseString(src).getDocumentElement();
+        // then
+        assertAll(
+                () -> assertEquals("1",
+                        XmlFunctions.attributeValue("a").apply(root).orElseThrow()),
+                () -> assertEquals("2",
+                        XmlFunctions.attributeValue("b").apply(root).orElseThrow()),
+                () -> assertTrue(XmlFunctions.attributeValue("missing").apply(root).isEmpty())
+        );
+    }
+
+    @Test
+    void testNamespacedAttributeValueShortcut() {
+        // given
+        var src = """
+                <?xml version='1.0'?>
+                <root xmlns:x='http://example.com/x' x:a='1' a='2'/>
+                """;
+        var root = parseStringNameSpaced(src).getDocumentElement();
+        // then
+        assertAll(
+                () -> assertEquals("1",
+                        XmlFunctions.attributeValue("http://example.com/x", "a")
+                                .apply(root).orElseThrow()),
+                () -> assertTrue(XmlFunctions.attributeValue("http://example.com/y", "a")
+                        .apply(root).isEmpty())
+        );
+    }
+
+    @Test
+    void testTextContentParsers() {
+        // given: an element whose children carry typed text content
+        var src = """
+                <?xml version='1.0'?>
+                <root>
+                    <i>1234</i>
+                    <l>9999999999</l>
+                    <d>3.14</d>
+                    <bd>12345.6789</bd>
+                    <s>  hello  </s>
+                    <date>2024-10-24</date>
+                    <dt>2024-10-24T12:34:56</dt>
+                    <odt>2024-10-24T12:34:56+02:00</odt>
+                    <zdt>2024-10-24T12:34:56+02:00[Europe/Berlin]</zdt>
+                    <b1>true</b1>
+                    <b0>false</b0>
+                    <empty/>
+                </root>
+                """;
+        var root = parseString(src).getDocumentElement();
+        var iEl = Stream.of((Node) root).flatMap(XmlFunctions.elements("i")).findFirst().orElseThrow();
+        var lEl = Stream.of((Node) root).flatMap(XmlFunctions.elements("l")).findFirst().orElseThrow();
+        var dEl = Stream.of((Node) root).flatMap(XmlFunctions.elements("d")).findFirst().orElseThrow();
+        var bdEl = Stream.of((Node) root).flatMap(XmlFunctions.elements("bd")).findFirst().orElseThrow();
+        var sEl = Stream.of((Node) root).flatMap(XmlFunctions.elements("s")).findFirst().orElseThrow();
+        var dateEl = Stream.of((Node) root).flatMap(XmlFunctions.elements("date")).findFirst().orElseThrow();
+        var dtEl = Stream.of((Node) root).flatMap(XmlFunctions.elements("dt")).findFirst().orElseThrow();
+        var odtEl = Stream.of((Node) root).flatMap(XmlFunctions.elements("odt")).findFirst().orElseThrow();
+        var zdtEl = Stream.of((Node) root).flatMap(XmlFunctions.elements("zdt")).findFirst().orElseThrow();
+        var b1El = Stream.of((Node) root).flatMap(XmlFunctions.elements("b1")).findFirst().orElseThrow();
+        var b0El = Stream.of((Node) root).flatMap(XmlFunctions.elements("b0")).findFirst().orElseThrow();
+        var emptyEl = Stream.of((Node) root).flatMap(XmlFunctions.elements("empty")).findFirst().orElseThrow();
+        // then
+        assertAll(
+                () -> assertEquals(1234, XmlFunctions.intContent(iEl).orElseThrow()),
+                () -> assertEquals(9_999_999_999L, XmlFunctions.longContent(lEl).orElseThrow()),
+                () -> assertEquals(3.14d, XmlFunctions.doubleContent(dEl).orElseThrow()),
+                () -> assertEquals(new BigDecimal("12345.6789"),
+                        XmlFunctions.decimalContent(bdEl).orElseThrow()),
+                // stringContent and text both trim
+                () -> assertEquals("hello", XmlFunctions.stringContent(sEl).orElseThrow()),
+                () -> assertEquals("hello", XmlFunctions.text(sEl).orElseThrow()),
+                () -> assertEquals(LocalDate.of(2024, 10, 24),
+                        XmlFunctions.dateContent(dateEl).orElseThrow()),
+                () -> assertEquals(LocalDate.of(2024, 10, 24).atTime(12, 34, 56),
+                        XmlFunctions.dateTimeContent(dtEl).orElseThrow()),
+                () -> assertEquals(OffsetDateTime.parse("2024-10-24T12:34:56+02:00"),
+                        XmlFunctions.offsetDateTimeContent(odtEl).orElseThrow()),
+                () -> assertEquals(ZonedDateTime.parse("2024-10-24T12:34:56+02:00[Europe/Berlin]"),
+                        XmlFunctions.zonedDateTimeContent(zdtEl).orElseThrow()),
+                () -> assertEquals(Boolean.TRUE, XmlFunctions.booleanContent(b1El).orElseThrow()),
+                () -> assertEquals(Boolean.FALSE, XmlFunctions.booleanContent(b0El).orElseThrow()),
+                // empty element: getTextContent returns "", trimmed is "" — Optional carries the empty string
+                () -> assertEquals("", XmlFunctions.text(emptyEl).orElseThrow())
+        );
+    }
+
+    @Test
+    void testNullElementYieldsEmpty() {
+        // when/then: every Element-based parser called with null returns an empty optional
+        assertAll(
+                () -> assertTrue(XmlFunctions.text(null).isEmpty()),
+                () -> assertTrue(XmlFunctions.intContent(null).isEmpty()),
+                () -> assertTrue(XmlFunctions.longContent(null).isEmpty()),
+                () -> assertTrue(XmlFunctions.doubleContent(null).isEmpty()),
+                () -> assertTrue(XmlFunctions.decimalContent(null).isEmpty()),
+                () -> assertTrue(XmlFunctions.stringContent(null).isEmpty()),
+                () -> assertTrue(XmlFunctions.dateContent(null).isEmpty()),
+                () -> assertTrue(XmlFunctions.dateTimeContent(null).isEmpty()),
+                () -> assertTrue(XmlFunctions.offsetDateTimeContent(null).isEmpty()),
+                () -> assertTrue(XmlFunctions.zonedDateTimeContent(null).isEmpty()),
+                () -> assertTrue(XmlFunctions.booleanContent(null).isEmpty())
+        );
+    }
+
+    @Test
+    void testBooleanContentInvalidThrows() {
+        var src = """
+                <?xml version='1.0'?>
+                <root><bad>yes</bad></root>
+                """;
+        var root = parseString(src).getDocumentElement();
+        var bad = Stream.of((Node) root).flatMap(XmlFunctions.elements("bad")).findFirst().orElseThrow();
+        assertThrows(IllegalArgumentException.class, () -> XmlFunctions.booleanContent(bad));
+    }
+
+    @Test
+    void testChildrenNamed() {
         // given
         var src = """
                 <?xml version='1.0'?>
@@ -213,7 +335,7 @@ class XmlFunctionsTest extends BaseTest {
     }
 
     @Test
-    void testOffsetAndZonedDateTimeValues() throws Exception {
+    void testOffsetAndZonedDateTimeValues() {
         // given
         var src = """
                 <?xml version='1.0'?>
@@ -237,7 +359,7 @@ class XmlFunctionsTest extends BaseTest {
     }
 
     @Test
-    void testBooleanLiterals() throws Exception {
+    void testBooleanLiterals() {
         // given
         var src = """
                 <?xml version='1.0'?>

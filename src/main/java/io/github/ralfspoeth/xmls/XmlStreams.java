@@ -97,4 +97,44 @@ public class XmlStreams {
     public static Stream<Element> allElements(Document doc) {
         return stream(doc.getElementsByTagName("*")).map(Element.class::cast);
     }
+
+    /**
+     * Returns a stream over all descendant {@link Element}s of the given element
+     * in document order. The element itself is not included.
+     *
+     * @param element the element whose descendants are streamed
+     * @return a stream of descendant elements
+     */
+    public static Stream<Element> descendantElements(Element element) {
+        return stream(element.getElementsByTagName("*")).map(Element.class::cast);
+    }
+
+    /**
+     * Returns a stream over the descendant {@link Element}s of the given element
+     * whose tag name equals {@code name}, in document order.
+     *
+     * <p>This method delegates to {@link Element#getElementsByTagName(String)} and
+     * therefore matches on tag (qualified) name. For namespace-aware matching, see
+     * {@link #descendantElements(Element, String, String)}.</p>
+     *
+     * @param element the element whose descendants are searched
+     * @param name    the tag name to match; the literal {@code "*"} matches all descendants
+     * @return a stream of matching descendant elements
+     */
+    public static Stream<Element> descendantElements(Element element, String name) {
+        return stream(element.getElementsByTagName(name)).map(Element.class::cast);
+    }
+
+    /**
+     * Returns a stream over the descendant {@link Element}s of the given element
+     * whose namespace URI and local name match the given values, in document order.
+     *
+     * @param element   the element whose descendants are searched
+     * @param ns        the namespace URI; the literal {@code "*"} matches all namespaces
+     * @param localName the local name; the literal {@code "*"} matches all local names
+     * @return a stream of matching descendant elements
+     */
+    public static Stream<Element> descendantElements(Element element, String ns, String localName) {
+        return stream(element.getElementsByTagNameNS(ns, localName)).map(Element.class::cast);
+    }
 }

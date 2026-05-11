@@ -61,6 +61,29 @@ public class XmlFunctions {
     }
 
     /**
+     * Shortcut for {@code attribute(name).andThen(o -> o.map(Attr::getValue))}.
+     *
+     * @param name the unqualified name of the attribute
+     * @return a function that, when applied to an element, returns the attribute's value
+     * (or an empty {@link Optional} if no such attribute exists)
+     */
+    public static Function<Element, Optional<String>> attributeValue(String name) {
+        return e -> ofNullable(e.getAttributeNode(name)).map(Attr::getValue);
+    }
+
+    /**
+     * Same as {@link #attributeValue(String)} but with a namespace URI.
+     *
+     * @param ns        the namespace URI
+     * @param localName the local name
+     * @return a function that, when applied to an element, returns the namespaced
+     * attribute's value (or an empty {@link Optional} if no such attribute exists)
+     */
+    public static Function<Element, Optional<String>> attributeValue(String ns, String localName) {
+        return e -> ofNullable(e.getAttributeNodeNS(ns, localName)).map(Attr::getValue);
+    }
+
+    /**
      * Obtain a function which returns the child elements of the given node as
      * a stream; to be used with {@link Stream#flatMap(Function)}.
      *
@@ -85,10 +108,10 @@ public class XmlFunctions {
      */
     public static Function<Node, Stream<Element>> elements(String ns, String localName) {
         return n -> XmlStreams.childNodes(n)
-                .filter(e -> e.getNodeName().equals(localName))
-                .filter(e -> e.getNamespaceURI().equals(ns))
                 .filter(Element.class::isInstance)
-                .map(Element.class::cast);
+                .map(Element.class::cast)
+                .filter(e -> localName.equals(e.getLocalName()))
+                .filter(e -> ns.equals(e.getNamespaceURI()));
     }
 
     /**
@@ -253,5 +276,145 @@ public class XmlFunctions {
                     case "false", "0" -> Boolean.FALSE;
                     default -> throw new IllegalArgumentException("Not a valid xs:boolean literal: " + v);
                 });
+    }
+
+    // ---------------------------------------------------------------------
+    // Element text-content parsers (symmetric to the Attr versions above)
+    // ---------------------------------------------------------------------
+
+    /**
+     * Return the trimmed text content of the given {@link Element}, if any.
+     *
+     * <p>The text content of an element is the concatenation of the text
+     * content of all of its descendant {@link org.w3c.dom.Text} nodes in
+     * document order (see {@link Node#getTextContent()}). The result is
+     * trimmed of leading and trailing whitespace.</p>
+     *
+     * @param element the element to read; may be {@code null}
+     * @return the trimmed text content, or an empty optional if {@code element} is {@code null}
+     */
+    public static Optional<String> text(@Nullable Element element) {
+        return ofNullable(element).map(Element::getTextContent).map(String::trim);
+    }
+
+    /**
+     * Parse the element's text content into an optional {@code int} value.
+     *
+     * @param element the element to read; may be {@code null}
+     * @return the parsed value, or an empty optional if {@code element} is {@code null}
+     * @throws NumberFormatException if the text content is non-null but not a valid {@code int}
+     */
+    public static OptionalInt intContent(@Nullable Element element) {
+        return text(element).stream().mapToInt(Integer::parseInt).findAny();
+    }
+
+    /**
+     * Parse the element's text content into an optional {@code long} value.
+     *
+     * @param element the element to read; may be {@code null}
+     * @return the parsed value, or an empty optional if {@code element} is {@code null}
+     * @throws NumberFormatException if the text content is non-null but not a valid {@code long}
+     */
+    public static OptionalLong longContent(@Nullable Element element) {
+        return text(element).stream().mapToLong(Long::parseLong).findAny();
+    }
+
+    /**
+     * Parse the element's text content into an optional {@code double} value.
+     *
+     * @param element the element to read; may be {@code null}
+     * @return the parsed value, or an empty optional if {@code element} is {@code null}
+     * @throws NumberFormatException if the text content is non-null but not a valid {@code double}
+     */
+    public static OptionalDouble doubleContent(@Nullable Element element) {
+        return text(element).stream().mapToDouble(Double::parseDouble).findAny();
+    }
+
+    /**
+     * Parse the element's text content into an optional {@link BigDecimal} value.
+     *
+     * @param element the element to read; may be {@code null}
+     * @return the parsed value, or an empty optional if {@code element} is {@code null}
+     * @throws NumberFormatException if the text content is non-null but not a valid {@link BigDecimal}
+     */
+    public static Optional<BigDecimal> decimalContent(@Nullable Element element) {
+        return text(element).map(BigDecimal::new);
+    }
+
+    /**
+     * Return the element's trimmed text content as an {@link Optional}{@code <String>}.
+     *
+     * <p>Equivalent to {@link #text(Element)}; provided for naming symmetry with the
+     * other {@code *Content} methods.</p>
+     *
+     * @param element the element to read; may be {@code null}
+     * @return the trimmed text content, or an empty optional if {@code element} is {@code null}
+     */
+    public static Optional<String> stringContent(@Nullable Element element) {
+        return text(element);
+    }
+
+    /**
+     * Parse the element's text content into an optional {@link LocalDate} value using the
+     * {@link java.time.format.DateTimeFormatter#ISO_LOCAL_DATE ISO_LOCAL_DATE} format.
+     *
+     * @param element the element to read; may be {@code null}
+     * @return the parsed date, or an empty optional if {@code element} is {@code null}
+     * @throws java.time.format.DateTimeParseException if the text content is non-null but cannot be parsed
+     */
+    public static Optional<LocalDate> dateContent(@Nullable Element element) {
+        return text(element).map(LocalDate::parse);
+    }
+
+    /**
+     * Parse the element's text content into an optional {@link LocalDateTime} value using the
+     * {@link java.time.format.DateTimeFormatter#ISO_LOCAL_DATE_TIME ISO_LOCAL_DATE_TIME} format.
+     *
+     * @param element the element to read; may be {@code null}
+     * @return the parsed date-time, or an empty optional if {@code element} is {@code null}
+     * @throws java.time.format.DateTimeParseException if the text content is non-null but cannot be parsed
+     */
+    public static Optional<LocalDateTime> dateTimeContent(@Nullable Element element) {
+        return text(element).map(LocalDateTime::parse);
+    }
+
+    /**
+     * Parse the element's text content into an optional {@link OffsetDateTime} value.
+     *
+     * @param element the element to read; may be {@code null}
+     * @return the parsed date-time, or an empty optional if {@code element} is {@code null}
+     * @throws java.time.format.DateTimeParseException if the text content is non-null but cannot be parsed
+     */
+    public static Optional<OffsetDateTime> offsetDateTimeContent(@Nullable Element element) {
+        return text(element).map(OffsetDateTime::parse);
+    }
+
+    /**
+     * Parse the element's text content into an optional {@link ZonedDateTime} value.
+     *
+     * @param element the element to read; may be {@code null}
+     * @return the parsed date-time, or an empty optional if {@code element} is {@code null}
+     * @throws java.time.format.DateTimeParseException if the text content is non-null but cannot be parsed
+     */
+    public static Optional<ZonedDateTime> zonedDateTimeContent(@Nullable Element element) {
+        return text(element).map(ZonedDateTime::parse);
+    }
+
+    /**
+     * Parse the element's text content into an optional {@link Boolean} value following the
+     * {@code xs:boolean} lexical space: {@code "true"} and {@code "1"} map to {@code true},
+     * {@code "false"} and {@code "0"} map to {@code false}.
+     *
+     * @param element the element to read; may be {@code null}
+     * @return the parsed value, or an empty optional if {@code element} is {@code null}
+     * @throws IllegalArgumentException if the text content is non-null but not a valid
+     *                                  {@code xs:boolean} literal
+     */
+    public static Optional<Boolean> booleanContent(@Nullable Element element) {
+        return text(element).map(v -> switch (v) {
+            case "true", "1" -> Boolean.TRUE;
+            case "false", "0" -> Boolean.FALSE;
+            default -> throw new IllegalArgumentException("Not a valid xs:boolean literal: " + v);
+        });
     }
 }

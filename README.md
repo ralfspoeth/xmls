@@ -1,28 +1,25 @@
 # XML Stream Support
 
-This project provides support for iterating
-and traversing XML documents with the Java Stream API.
+A small Java library that exposes the W3C DOM through the `java.util.stream`
+API and provides composable helpers for navigating, filtering, and extracting
+typed values from XML documents.
 
 ## Rationale
 
-The `java.xml` module shipped with the JDK contains
-interfaces and classes dating back to the year 2004
-when release 1.5 was published.
-Especially the packages originating from the W3C
-(`org.w3c.dom` in particular) translate the DOM verbatim
-into interfaces and classes. The result is verbose,
-iterator-unfriendly code: `NodeList` is not `Iterable`,
-`NamedNodeMap` is not `Map`, and navigating a tree means
-writing index-based `for` loops or recursive helpers by hand.
+The `java.xml` module shipped with the JDK contains interfaces and classes
+dating back to 2004. The packages originating from the W3C
+(`org.w3c.dom` in particular) translate the DOM verbatim into interfaces:
+`NodeList` is not `Iterable`, `NamedNodeMap` is not `Map`, and navigating a
+tree means writing index-based `for` loops or recursive helpers by hand.
 
-This module bridges those W3C types into `java.util.stream`
-so that traversal, filtering, and value extraction can be
-expressed as ordinary stream pipelines.
+This library bridges those W3C types into `java.util.stream` so that
+traversal, filtering, and value extraction can be expressed as ordinary
+stream pipelines.
 
-> **Note.** Use this module with unmodifiable XML trees only.
-> The streams take a snapshot of `NodeList.getLength()` /
-> `NamedNodeMap.getLength()` at construction time and do not
-> detect concurrent modification of the underlying document.
+> **Note.** Use this library with unmodifiable XML trees only. The streams
+> take a snapshot of `NodeList.getLength()` / `NamedNodeMap.getLength()` at
+> construction time and do not detect concurrent modification of the
+> underlying document.
 
 ## Requirements
 
@@ -37,7 +34,7 @@ Maven:
 <dependency>
     <groupId>io.github.ralfspoeth</groupId>
     <artifactId>xmls</artifactId>
-    <version>0.0.5</version>
+    <version>0.9</version>
 </dependency>
 ```
 
@@ -49,40 +46,80 @@ requires io.github.ralfspoeth.xmls;
 
 ## API at a glance
 
-The library exposes two utility classes in the package
-`io.github.ralfspoeth.xmls`.
+Everything lives in the package `io.github.ralfspoeth.xmls`:
 
-### `XmlStreams` — turn DOM collections into streams
+- **`Xml`** — convenience parsers that turn strings, streams, readers,
+  or `Path`s into a `Document` without the JAXP boilerplate.
+- **`XmlStreams`** — turn DOM collections into streams; descendant
+  traversal.
+- **`XmlFunctions`** — composable navigators returning `Function`s,
+  plus typed parsers for attribute values and element text content.
+- **`XmlException`** — unchecked exception thrown by `Xml` on parse or
+  I/O failure; the underlying `SAXException` / `IOException` is preserved
+  as the cause.
+
+### `Xml` — parsing entry points
+
+```java
+Document doc = Xml.parse(string);          // from a String
+Document doc = Xml.parse(inputStream);     // from an InputStream
+Document doc = Xml.parse(reader);          // from a Reader
+Document doc = Xml.parse(path);            // from a file Path
+```
+
+For namespace-aware parsing (required to use the `(ns, localName)`
+overloads below), use the `parseNs` variants:
+
+```java
+Document doc = Xml.parseNs(string);
+// …and parseNs(InputStream), parseNs(Reader), parseNs(Path)
+```
+
+Any failure is wrapped in `XmlException` (unchecked).
+
+### `XmlStreams` — DOM collections as streams
 
 | Method | Returns |
 | --- | --- |
-| `attributes(Node)` | `Stream<Attr>` of the node's attributes (empty if the node has none) |
+| `attributes(Node)` | `Stream<Attr>` of the node's attributes (empty if it has none) |
 | `childNodes(Node)` | `Stream<Node>` of the node's direct children |
 | `allElements(Document)` | `Stream<Element>` of every element in the document, in document order |
+| `descendantElements(Element)` | `Stream<Element>` of all descendants of an element (self excluded) |
+| `descendantElements(Element, String name)` | descendants whose tag name matches; `"*"` matches all |
+| `descendantElements(Element, String ns, String localName)` | descendants by namespace URI and local name; either may be `"*"` |
 
-### `XmlFunctions` — composable navigators and typed value parsers
+### `XmlFunctions` — navigators and typed parsers
 
-Higher-order helpers that return `Function`s so they compose
-under `flatMap`:
+Higher-order helpers returning `Function`s that compose under `flatMap`:
 
-- `elements(String name)` — child elements with the given local name
-- `elements(String ns, String localName)` — same, namespace-aware
-- `attribute(String name)` / `attribute(String ns, String localName)` — a single attribute as `Optional<Attr>`
-- `childrenNamed(String name)` — all child nodes (any type) matching the name
+- `elements(name)` / `elements(ns, localName)` — child elements with a given
+  (qualified or namespaced) name
+- `attribute(name)` / `attribute(ns, localName)` — a single attribute as
+  `Function<Element, Optional<Attr>>`
+- `attributeValue(name)` / `attributeValue(ns, localName)` — shortcut
+  returning the attribute's value directly as
+  `Function<Element, Optional<String>>`
+- `childrenNamed(name)` — all child nodes (any node type) matching the name
 
-Typed parsers for attribute values:
+Typed parsers for **attribute values** (`@Nullable Attr` → typed `Optional`):
 
-- `intValue`, `longValue`, `doubleValue`, `decimalValue`
-- `stringValue`
-- `dateValue` (ISO local date), `dateTimeValue` (ISO local date-time),
-  `offsetDateTimeValue` (with offset, e.g. `…+02:00`),
-  `zonedDateTimeValue` (with zone)
+- `intValue`, `longValue`, `doubleValue`, `decimalValue`, `stringValue`
+- `dateValue`, `dateTimeValue`, `offsetDateTimeValue`, `zonedDateTimeValue`
 - `booleanValue` — follows the `xs:boolean` lexical space
   (`true`/`1` → true, `false`/`0` → false)
 
-All parsers accept a `@Nullable Attr`. A `null` attribute returns
-the empty optional; a non-null attribute with a malformed value
-throws the corresponding `NumberFormatException`,
+Symmetric parsers for **element text content** (`@Nullable Element` →
+typed `Optional`; the text content is trimmed before parsing):
+
+- `text` — the trimmed text content as `Optional<String>`
+- `intContent`, `longContent`, `doubleContent`, `decimalContent`,
+  `stringContent`
+- `dateContent`, `dateTimeContent`, `offsetDateTimeContent`,
+  `zonedDateTimeContent`
+- `booleanContent`
+
+A `null` input yields the empty optional. A non-null input whose value
+cannot be parsed throws the corresponding `NumberFormatException`,
 `DateTimeParseException`, or `IllegalArgumentException`.
 
 ## Usage
@@ -104,48 +141,69 @@ Given this document:
 </root>
 ```
 
-Count the `<a>` children of `<root>`:
+Parse and count the `<a>` children of `<root>`:
 
 ```java
 import static io.github.ralfspoeth.xmls.XmlFunctions.elements;
+
+Document doc = Xml.parse(xmlString);
+Element root = doc.getDocumentElement();
 
 long n = Stream.of(root)
     .flatMap(elements("a"))
     .count();   // 3
 ```
 
-Drill down a path and read a numeric value:
+Drill down a path and read a typed value from text content:
 
 ```java
-int value = Stream.of(root)
+import static io.github.ralfspoeth.xmls.XmlFunctions.*;
+
+Element e = Stream.of(root)
     .flatMap(elements("b"))
     .flatMap(elements("c"))
     .flatMap(elements("d"))
     .flatMap(elements("e"))
     .findFirst()
-    .map(Element::getTextContent)
-    .map(String::trim)
-    .map(Integer::parseInt)
-    .orElseThrow();   // 1234
+    .orElseThrow();
+
+int value = intContent(e).orElseThrow();   // 1234
 ```
 
-Read a typed attribute, with a default:
+Read a typed attribute with a default:
 
 ```java
-import static io.github.ralfspoeth.xmls.XmlFunctions.*;
-
 int id = intValue(element.getAttributeNode("id")).orElse(-1);
 LocalDate when = dateValue(element.getAttributeNode("date"))
                     .orElse(LocalDate.now());
 ```
 
-Iterate every element in a document:
+The `attributeValue` shortcut composes nicely in a stream pipeline:
 
 ```java
-import static io.github.ralfspoeth.xmls.XmlStreams.allElements;
+List<String> ids = Stream.of(root)
+    .flatMap(elements("a"))
+    .flatMap(e -> attributeValue("id").apply(e).stream())
+    .toList();   // ["1", "2", "3"]
+```
 
-allElements(doc)
-    .filter(e -> "item".equals(e.getTagName()))
+Walk every descendant of an element:
+
+```java
+import static io.github.ralfspoeth.xmls.XmlStreams.descendantElements;
+
+descendantElements(root, "item")
+    .forEach(System.out::println);
+```
+
+Namespace-aware lookup:
+
+```java
+Document doc = Xml.parseNs(xmlString);
+Element root = doc.getDocumentElement();
+
+Stream.of(root)
+    .flatMap(elements("http://example.com/ns", "item"))
     .forEach(System.out::println);
 ```
 
