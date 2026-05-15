@@ -23,7 +23,7 @@ stream pipelines.
 
 ## Requirements
 
-- Java 17 or later
+- Java 25 or later
 - The `java.xml` module (shipped with the JDK)
 
 ## Installation
@@ -34,7 +34,7 @@ Maven:
 <dependency>
     <groupId>io.github.ralfspoeth</groupId>
     <artifactId>xmls</artifactId>
-    <version>0.9.1</version>
+    <version>0.10.0</version>
 </dependency>
 ```
 

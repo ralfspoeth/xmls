@@ -10,7 +10,6 @@ import javax.xml.parsers.ParserConfigurationException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
-import java.io.StringReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
@@ -71,8 +70,8 @@ public final class Xml {
      * @return the parsed document
      * @throws XmlException if parsing fails
      */
-    public static Document parse(String src) {
-        return parse(DEFAULT_FACTORY, new InputSource(new StringReader(src)));
+    public static Document parse(CharSequence src) {
+        return parse(DEFAULT_FACTORY, new InputSource(Reader.of(src)));
     }
 
     /**
@@ -115,14 +114,14 @@ public final class Xml {
     }
 
     /**
-     * Namespace-aware version of {@link #parse(String)}.
+     * Namespace-aware version of {@link #parse(CharSequence)}.
      *
      * @param src the XML source text; must not be {@code null}
      * @return the parsed document
      * @throws XmlException if parsing fails
      */
-    public static Document parseNameSpaced(String src) {
-        return parse(NAMESPACE_AWARE_FACTORY, new InputSource(new StringReader(src)));
+    public static Document parseNameSpaced(CharSequence src) {
+        return parse(NAMESPACE_AWARE_FACTORY, new InputSource(Reader.of(src)));
     }
 
     /**
