@@ -9,7 +9,6 @@ import java.math.BigDecimal;
 import java.time.*;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
 
@@ -26,9 +25,11 @@ class XmlFunctionsTest extends BaseTest {
                 """;
         var doc = parseString(src);
         assertAll(
-                () -> assertEquals("2", Optional.of(doc.getDocumentElement())
-                        .flatMap(XmlFunctions.attribute("b"))
-                        .map(Attr::getValue)
+                // a navigator yields a nullable Attr, so it composes straight
+                // into a converter without an Optional in the middle
+                () -> assertEquals("2", XmlFunctions.attribute("b")
+                        .andThen(XmlFunctions::stringValue)
+                        .apply(doc.getDocumentElement())
                         .orElseThrow()
                 )
         );
@@ -111,23 +112,25 @@ class XmlFunctionsTest extends BaseTest {
                 <root xmlns:x='http://example.com/x' x:a='1' a='2'/>
                 """;
         // when
-        var root = parseStringNameSpaced(src).getDocumentElement();
+        var root = parseStringNS(src).getDocumentElement();
         // then
         assertAll(
                 () -> assertEquals(
                         "1",
-                        Optional.of(root)
-                                .flatMap(XmlFunctions.attribute("http://example.com/x", "a"))
-                                .map(Attr::getValue)
+                        XmlFunctions.attribute("http://example.com/x", "a")
+                                .andThen(XmlFunctions::stringValue)
+                                .apply(root)
                                 .orElseThrow()
                 ),
-                // querying with the wrong namespace returns empty
-                () -> assertTrue(Optional.of(root)
-                        .flatMap(XmlFunctions.attribute("http://example.com/y", "a"))
+                // the wrong namespace yields no attribute, and the converter says empty
+                () -> assertTrue(XmlFunctions.attribute("http://example.com/y", "a")
+                        .andThen(XmlFunctions::stringValue)
+                        .apply(root)
                         .isEmpty()),
-                // querying with an unknown local name returns empty
-                () -> assertTrue(Optional.of(root)
-                        .flatMap(XmlFunctions.attribute("http://example.com/x", "missing"))
+                // as does an unknown local name
+                () -> assertTrue(XmlFunctions.attribute("http://example.com/x", "missing")
+                        .andThen(XmlFunctions::stringValue)
+                        .apply(root)
                         .isEmpty())
         );
     }
@@ -147,7 +150,7 @@ class XmlFunctionsTest extends BaseTest {
                 </root>
                 """;
         // when
-        var root = parseStringNameSpaced(src).getDocumentElement();
+        var root = parseStringNS(src).getDocumentElement();
         // then
         assertAll(
                 () -> assertEquals(
@@ -205,7 +208,7 @@ class XmlFunctionsTest extends BaseTest {
                 <?xml version='1.0'?>
                 <root xmlns:x='http://example.com/x' x:a='1' a='2'/>
                 """;
-        var root = parseStringNameSpaced(src).getDocumentElement();
+        var root = parseStringNS(src).getDocumentElement();
         // then
         assertAll(
                 () -> assertEquals("1",
@@ -256,9 +259,8 @@ class XmlFunctionsTest extends BaseTest {
                 () -> assertEquals(3.14d, XmlFunctions.doubleContent(dEl).orElseThrow()),
                 () -> assertEquals(new BigDecimal("12345.6789"),
                         XmlFunctions.decimalContent(bdEl).orElseThrow()),
-                // stringContent and text both trim
+                // the text content is trimmed before anything parses it
                 () -> assertEquals("hello", XmlFunctions.stringContent(sEl).orElseThrow()),
-                () -> assertEquals("hello", XmlFunctions.text(sEl).orElseThrow()),
                 () -> assertEquals(LocalDate.of(2024, 10, 24),
                         XmlFunctions.dateContent(dateEl).orElseThrow()),
                 () -> assertEquals(LocalDate.of(2024, 10, 24).atTime(12, 34, 56),
@@ -270,7 +272,7 @@ class XmlFunctionsTest extends BaseTest {
                 () -> assertEquals(Boolean.TRUE, XmlFunctions.booleanContent(b1El).orElseThrow()),
                 () -> assertEquals(Boolean.FALSE, XmlFunctions.booleanContent(b0El).orElseThrow()),
                 // empty element: getTextContent returns "", trimmed is "" — Optional carries the empty string
-                () -> assertEquals("", XmlFunctions.text(emptyEl).orElseThrow())
+                () -> assertEquals("", XmlFunctions.stringContent(emptyEl).orElseThrow())
         );
     }
 
@@ -278,7 +280,7 @@ class XmlFunctionsTest extends BaseTest {
     void testNullElementYieldsEmpty() {
         // when/then: every Element-based parser called with null returns an empty optional
         assertAll(
-                () -> assertTrue(XmlFunctions.text(null).isEmpty()),
+                () -> assertTrue(XmlFunctions.stringContent(null).isEmpty()),
                 () -> assertTrue(XmlFunctions.intContent(null).isEmpty()),
                 () -> assertTrue(XmlFunctions.longContent(null).isEmpty()),
                 () -> assertTrue(XmlFunctions.doubleContent(null).isEmpty()),

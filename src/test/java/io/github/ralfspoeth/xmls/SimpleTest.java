@@ -8,8 +8,9 @@ import org.xml.sax.SAXException;
 import java.io.IOException;
 import java.util.stream.Stream;
 
-import static io.github.ralfspoeth.xmls.XmlFunctions.*;
-import static org.junit.jupiter.api.Assertions.*;
+import static io.github.ralfspoeth.xmls.XmlFunctions.elements;
+import static org.junit.jupiter.api.Assertions.assertAll;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class SimpleTest extends BaseTest {
 

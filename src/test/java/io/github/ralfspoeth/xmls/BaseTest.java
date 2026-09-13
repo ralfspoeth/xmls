@@ -14,8 +14,8 @@ class BaseTest {
      * @param src the source text
      * @return the document object
      */
-    public Document parseStringNameSpaced(String src) {
-        return Xml.parseNameSpaced(new StringReader(src));
+    public Document parseStringNS(String src) {
+        return Xml.parseNS(new StringReader(src));
     }
 
     /**

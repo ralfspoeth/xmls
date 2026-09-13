@@ -101,12 +101,12 @@ class XmlTest {
     }
 
     // ------------------------------------------------------------------
-    // parseNameSpaced(...) happy paths
+    // parseNS(...) happy paths
     // ------------------------------------------------------------------
 
     @Test
-    void parseNameSpacedStringRecognisesNamespaces() {
-        var doc = Xml.parseNameSpaced(NAMESPACED);
+    void parseNSStringRecognisesNamespaces() {
+        var doc = Xml.parseNS(NAMESPACED);
         var root = doc.getDocumentElement();
         var attr = root.getAttributeNodeNS("http://example.com/x", "a");
         assertEquals("http://example.com/x", attr.getNamespaceURI());
@@ -114,9 +114,9 @@ class XmlTest {
     }
 
     @Test
-    void parseNameSpacedInputStreamRecognisesNamespaces() {
+    void parseNSInputStreamRecognisesNamespaces() {
         var in = new ByteArrayInputStream(NAMESPACED.getBytes(StandardCharsets.UTF_8));
-        var doc = Xml.parseNameSpaced(in);
+        var doc = Xml.parseNS(in);
         var root = doc.getDocumentElement();
         assertEquals(
                 "http://example.com/x",
@@ -125,8 +125,8 @@ class XmlTest {
     }
 
     @Test
-    void parseNameSpacedReaderRecognisesNamespaces() {
-        var doc = Xml.parseNameSpaced(new StringReader(NAMESPACED));
+    void parseNSReaderRecognisesNamespaces() {
+        var doc = Xml.parseNS(new StringReader(NAMESPACED));
         var root = doc.getDocumentElement();
         assertEquals(
                 "http://example.com/x",
@@ -135,10 +135,10 @@ class XmlTest {
     }
 
     @Test
-    void parseNameSpacedPathRecognisesNamespaces(@TempDir Path tmp) throws IOException {
+    void parseNSPathRecognisesNamespaces(@TempDir Path tmp) throws IOException {
         var p = tmp.resolve("ns.xml");
         Files.writeString(p, NAMESPACED);
-        var doc = Xml.parseNameSpaced(p);
+        var doc = Xml.parseNS(p);
         var root = doc.getDocumentElement();
         assertEquals(
                 "http://example.com/x",
@@ -147,42 +147,42 @@ class XmlTest {
     }
 
     // ------------------------------------------------------------------
-    // parseNameSpaced(...) error paths
+    // parseNS(...) error paths
     // ------------------------------------------------------------------
 
     @Test
-    void parseNameSpacedInvalidStringThrowsXmlException() {
-        var ex = assertThrows(XmlException.class, () -> Xml.parseNameSpaced(INVALID));
+    void parseNSInvalidStringThrowsXmlException() {
+        var ex = assertThrows(XmlException.class, () -> Xml.parseNS(INVALID));
         assertNotNull(ex.getCause());
     }
 
     @Test
-    void parseNameSpacedInvalidInputStreamThrowsXmlException() {
+    void parseNSInvalidInputStreamThrowsXmlException() {
         var in = new ByteArrayInputStream(INVALID.getBytes(StandardCharsets.UTF_8));
-        var ex = assertThrows(XmlException.class, () -> Xml.parseNameSpaced(in));
+        var ex = assertThrows(XmlException.class, () -> Xml.parseNS(in));
         assertNotNull(ex.getCause());
     }
 
     @Test
-    void parseNameSpacedInvalidReaderThrowsXmlException() {
+    void parseNSInvalidReaderThrowsXmlException() {
         var ex = assertThrows(XmlException.class,
-                () -> Xml.parseNameSpaced(new StringReader(INVALID)));
+                () -> Xml.parseNS(new StringReader(INVALID)));
         assertNotNull(ex.getCause());
     }
 
     @Test
-    void parseNameSpacedMissingFileThrowsXmlException() {
+    void parseNSMissingFileThrowsXmlException() {
         var missing = Path.of("/this/path/should/not/exist/" + System.nanoTime() + ".xml");
-        var ex = assertThrows(XmlException.class, () -> Xml.parseNameSpaced(missing));
+        var ex = assertThrows(XmlException.class, () -> Xml.parseNS(missing));
         assertNotNull(ex.getCause());
         assertTrue(ex.getMessage().contains(missing.toString()));
     }
 
     @Test
-    void parseNameSpacedInvalidFileThrowsXmlException(@TempDir Path tmp) throws IOException {
+    void parseNSInvalidFileThrowsXmlException(@TempDir Path tmp) throws IOException {
         var p = tmp.resolve("bad-ns.xml");
         Files.writeString(p, INVALID);
-        var ex = assertThrows(XmlException.class, () -> Xml.parseNameSpaced(p));
+        var ex = assertThrows(XmlException.class, () -> Xml.parseNS(p));
         assertNotNull(ex.getCause());
     }
 

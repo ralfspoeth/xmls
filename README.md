@@ -21,6 +21,45 @@ stream pipelines.
 > construction time and do not detect concurrent modification of the
 > underlying document.
 
+## Stability
+
+**1.0.0 means the API is settled.** The four types and their methods are what
+this library is; nothing here will be renamed, removed or given a different
+signature before a 2.0, and no 2.0 is planned. The library is finished in the
+sense that matters for a dependency: it does one thing, that thing is done, and
+"no new features" is a statement of intent rather than an apology.
+
+What may still change in a 1.x: a bug fix where behaviour contradicts the
+documentation, and documentation itself. What will not: anything a caller
+compiles against.
+
+## Migrating from 0.11
+
+Three names changed on the way to 1.0, each because 1.0 would have frozen it:
+
+- **`Xml.parseNameSpaced(...)` is `Xml.parseNS(...)`.** *Namespace* is one word,
+  so the interior capital read as a typo — and `NS` is the suffix the DOM itself
+  uses for exactly this distinction (`getElementsByTagNameNS`,
+  `getAttributeNodeNS`), so `parse` / `parseNS` lands in a vocabulary a caller
+  already has.
+- **`XmlFunctions.text(Element)` is gone; use `stringContent(Element)`.** They
+  were the same method under two names — one delegated to the other — and the
+  shorter one was the one that broke the `*Content` family. A reader who has met
+  `intContent` guesses `stringContent` and never guesses `text`.
+- **`XmlFunctions.attribute(...)` yields a nullable `Attr`, not an
+  `Optional<Attr>`.** This is what lets a navigator compose with a converter:
+  `attribute("id").andThen(XmlFunctions::intValue)`. An `Optional` in the middle
+  could not — `Optional.map(XmlFunctions::intValue)` gives a nested
+  `Optional<OptionalInt>`. Existing code of the form
+  `Optional.of(el).flatMap(attribute("id"))` becomes
+  `attribute("id").andThen(XmlFunctions::stringValue).apply(el)`, or
+  `ofNullable(attribute("id").apply(el))` if you want the `Optional` back
+  unchanged.
+
+`attributeValue(...)` is **not** affected: it still yields
+`Function<Element, Optional<String>>`, because it hands back a finished value
+rather than something to convert.
+
 ## Requirements
 
 - Java 25 or later
@@ -34,7 +73,7 @@ Maven:
 <dependency>
     <groupId>io.github.ralfspoeth</groupId>
     <artifactId>xmls</artifactId>
-    <version>0.10.0</version>
+    <version>1.0.0</version>
 </dependency>
 ```
 
@@ -68,11 +107,11 @@ Document doc = Xml.parse(path);            // from a file Path
 ```
 
 For namespace-aware parsing (required to use the `(ns, localName)`
-overloads below), use the `parseNs` variants:
+overloads below), use the `parseNS` variants:
 
 ```java
-Document doc = Xml.parseNs(string);
-// …and parseNs(InputStream), parseNs(Reader), parseNs(Path)
+Document doc = Xml.parseNS(string);
+// …and parseNS(InputStream), parseNS(Reader), parseNS(Path)
 ```
 
 Any failure is wrapped in `XmlException` (unchecked).
@@ -90,12 +129,14 @@ Any failure is wrapped in `XmlException` (unchecked).
 
 ### `XmlFunctions` — navigators and typed parsers
 
-Higher-order helpers returning `Function`s that compose under `flatMap`:
+Higher-order helpers returning `Function`s — the ones yielding a `Stream`
+compose under `flatMap`, the ones yielding a single node under `andThen`:
 
 - `elements(name)` / `elements(ns, localName)` — child elements with a given
   (qualified or namespaced) name
 - `attribute(name)` / `attribute(ns, localName)` — a single attribute as
-  `Function<Element, Optional<Attr>>`
+  `Function<Element, Attr>`, yielding `null` where there is none, so that it
+  composes straight into a converter with `andThen` (see below)
 - `attributeValue(name)` / `attributeValue(ns, localName)` — shortcut
   returning the attribute's value directly as
   `Function<Element, Optional<String>>`
@@ -111,9 +152,9 @@ Typed parsers for **attribute values** (`@Nullable Attr` → typed `Optional`):
 Symmetric parsers for **element text content** (`@Nullable Element` →
 typed `Optional`; the text content is trimmed before parsing):
 
-- `text` — the trimmed text content as `Optional<String>`
-- `intContent`, `longContent`, `doubleContent`, `decimalContent`,
-  `stringContent`
+- `stringContent` — the trimmed text content as `Optional<String>`, which is
+  what all the others parse
+- `intContent`, `longContent`, `doubleContent`, `decimalContent`
 - `dateContent`, `dateTimeContent`, `offsetDateTimeContent`,
   `zonedDateTimeContent`
 - `booleanContent`
@@ -173,9 +214,25 @@ int value = intContent(e).orElseThrow();   // 1234
 Read a typed attribute with a default:
 
 ```java
+int id = attribute("id").andThen(XmlFunctions::intValue)
+                        .apply(element)
+                        .orElse(-1);
+LocalDate when = attribute("date").andThen(XmlFunctions::dateValue)
+                        .apply(element)
+                        .orElse(LocalDate.now());
+```
+
+Navigators and converters compose because `attribute` yields a *nullable*
+`Attr` and every converter accepts `null` and answers empty. An `Optional`
+between them would not compose — `Optional.map(XmlFunctions::intValue)` gives
+a nested `Optional<OptionalInt>`. Where a chain ends, `Optional` returns: the
+converters yield one, and so does `attributeValue`, which hands back a finished
+value rather than something to convert.
+
+Given a DOM `Attr` you already hold, the converters still take it directly:
+
+```java
 int id = intValue(element.getAttributeNode("id")).orElse(-1);
-LocalDate when = dateValue(element.getAttributeNode("date"))
-                    .orElse(LocalDate.now());
 ```
 
 The `attributeValue` shortcut composes nicely in a stream pipeline:
@@ -199,7 +256,7 @@ descendantElements(root, "item")
 Namespace-aware lookup:
 
 ```java
-Document doc = Xml.parseNameSpaced(xmlString);
+Document doc = Xml.parseNS(xmlString);
 Element root = doc.getDocumentElement();
 
 Stream.of(root)

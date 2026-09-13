@@ -28,6 +28,35 @@ import static java.util.Optional.ofNullable;
  * {@link Stream#map(Function)} and {@link Stream#flatMap(Function)} in
  * combination with the streams produced by {@link XmlStreams}.</p>
  *
+ * <h2>Navigators and converters compose</h2>
+ *
+ * A <em>navigator</em> finds something in the document; a <em>converter</em>
+ * turns what was found into a typed value. The two join with
+ * {@link Function#andThen(Function)}:
+ *
+ * {@snippet :
+ * int id = attribute("id").andThen(XmlFunctions::intValue).apply(element).orElse(-1);
+ * }
+ *
+ * That works because {@link #attribute(String)} yields a <em>nullable</em>
+ * {@link Attr} rather than an {@code Optional} one, and every converter accepts
+ * {@code null} and answers an empty result. An {@code Optional} in the middle
+ * would not compose - {@code Optional.map(XmlFunctions::intValue)} yields a
+ * nested {@code Optional<OptionalInt>}, which is why the chain used to be
+ * written {@code intValue(attribute("id").apply(e).orElse(null))} and mostly was
+ * not written at all.
+ *
+ * <p><strong>Where a chain ends, {@code Optional} returns.</strong> The
+ * converters yield one, and so does {@link #attributeValue(String)}, which hands
+ * back a finished {@code String} rather than something to convert. The rule is
+ * that {@code null} travels <em>between</em> a navigator and a converter, and
+ * {@code Optional} is what a caller receives - it is for deciding what absence
+ * means, which is a decision only the end of the chain can make.</p>
+ *
+ * <p>The numeric converters return {@link java.util.OptionalInt} and its
+ * siblings, so nothing chains past them; primitive optionals do not compose with
+ * {@code Optional}. Ending a chain is all they are for.</p>
+ *
  * <p>This class is not intended to be instantiated.</p>
  */
 public class XmlFunctions {
@@ -40,11 +69,11 @@ public class XmlFunctions {
      * named {@code name} when applied to an {@link Element}
      *
      * @param name the unqualified name of the attribute
-     * @return a function when applied to an element returns the attribute identified by the given unqualified name,
-     * may be {@code null}
+     * @return a function that, applied to an element, yields the attribute of that
+     * name, or {@code null} where the element has no such attribute
      */
-    public static Function<Element, Optional<Attr>> attribute(String name) {
-        return e -> ofNullable(e.getAttributeNode(name));
+    public static Function<Element, @Nullable Attr> attribute(String name) {
+        return e -> e.getAttributeNode(name);
     }
 
     /**
@@ -52,16 +81,25 @@ public class XmlFunctions {
      *
      * @param ns        the namespace URI
      * @param localName the local name
-     * @return a function when applied to an element returns the attribute identified by the given
-     * namespace URI and local name, wrapped in an {@link Optional} which is empty if no such
-     * attribute exists
+     * @return a function that, applied to an element, yields the attribute of that
+     * namespace URI and local name, or {@code null} where the element has no such
+     * attribute
      */
-    public static Function<Element, Optional<Attr>> attribute(String ns, String localName) {
-        return e -> ofNullable(e.getAttributeNodeNS(ns, localName));
+    public static Function<Element, @Nullable Attr> attribute(String ns, String localName) {
+        return e -> e.getAttributeNodeNS(ns, localName);
     }
 
     /**
-     * Shortcut for {@code attribute(name).andThen(o -> o.map(Attr::getValue))}.
+     * Exactly {@code attribute(name).andThen(XmlFunctions::stringValue)}, and kept
+     * as a name of its own because that is where most reads of an attribute stop.
+     *
+     * <p>This one yields an {@link Optional} rather than a nullable value, unlike
+     * {@link #attribute(String)} above, and the asymmetry is the point: a
+     * navigator that hands back a DOM node is handing it to a converter, so a
+     * bare {@code null} travels between the two and the converter answers empty.
+     * A navigator that hands back a finished value has reached the end of the
+     * chain, where a caller decides what absence means - and that is what
+     * {@code Optional} is for.</p>
      *
      * @param name the unqualified name of the attribute
      * @return a function that, when applied to an element, returns the attribute's value
@@ -283,17 +321,17 @@ public class XmlFunctions {
     // ---------------------------------------------------------------------
 
     /**
-     * Return the trimmed text content of the given {@link Element}, if any.
+     * The trimmed text content every {@code *Content} method reads before
+     * parsing it.
      *
-     * <p>The text content of an element is the concatenation of the text
-     * content of all of its descendant {@link org.w3c.dom.Text} nodes in
-     * document order (see {@link Node#getTextContent()}). The result is
-     * trimmed of leading and trailing whitespace.</p>
-     *
-     * @param element the element to read; may be {@code null}
-     * @return the trimmed text content, or an empty optional if {@code element} is {@code null}
+     * <p>Private, and {@link #stringContent(Element)} is the public way to ask
+     * for it. The two were both public until 1.0, one delegating to the other,
+     * which left a caller to work out that {@code text} and
+     * {@code stringContent} are the same thing - and the shorter name was the
+     * one that broke the family, since a reader who has met {@code intContent}
+     * guesses {@code stringContent} and never guesses {@code text}.</p>
      */
-    public static Optional<String> text(@Nullable Element element) {
+    private static Optional<String> text(@Nullable Element element) {
         return ofNullable(element).map(Element::getTextContent).map(String::trim);
     }
 
@@ -344,8 +382,11 @@ public class XmlFunctions {
     /**
      * Return the element's trimmed text content as an {@link Optional}{@code <String>}.
      *
-     * <p>Equivalent to {@link #text(Element)}; provided for naming symmetry with the
-     * other {@code *Content} methods.</p>
+     * <p>The text content of an element is the concatenation of the text content of
+     * all of its descendant {@link org.w3c.dom.Text} nodes in document order (see
+     * {@link Node#getTextContent()}), trimmed of leading and trailing whitespace.
+     * This is what every other {@code *Content} method parses, so a value that
+     * {@link #intContent(Element)} refuses can be read as it stands from here.</p>
      *
      * @param element the element to read; may be {@code null}
      * @return the trimmed text content, or an empty optional if {@code element} is {@code null}

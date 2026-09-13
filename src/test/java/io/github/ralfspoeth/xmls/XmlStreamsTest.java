@@ -5,7 +5,8 @@ import org.w3c.dom.Element;
 
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertAll;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class XmlStreamsTest extends BaseTest {
 
@@ -106,7 +107,7 @@ class XmlStreamsTest extends BaseTest {
                     </wrapper>
                 </root>""";
         // when
-        var doc = parseStringNameSpaced(src);
+        var doc = parseStringNS(src);
         var root = doc.getDocumentElement();
         // then
         assertAll(

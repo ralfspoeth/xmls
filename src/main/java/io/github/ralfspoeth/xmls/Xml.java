@@ -20,7 +20,7 @@ import java.nio.file.Path;
  * <ul>
  *   <li>{@code parse(...)} &mdash; uses the platform default
  *       {@link DocumentBuilderFactory}, which is <em>not</em> namespace-aware.</li>
- *   <li>{@code parseNameSpaced(...)} &mdash; uses a namespace-aware
+ *   <li>{@code parseNS(...)} &mdash; uses a namespace-aware
  *       {@link DocumentBuilderFactory}; required if you intend to read
  *       namespaced names with {@link org.w3c.dom.Element#getNamespaceURI()} or
  *       use the namespace-aware helpers in {@link XmlFunctions} and
@@ -120,7 +120,7 @@ public final class Xml {
      * @return the parsed document
      * @throws XmlException if parsing fails
      */
-    public static Document parseNameSpaced(CharSequence src) {
+    public static Document parseNS(CharSequence src) {
         return parse(NAMESPACE_AWARE_FACTORY, new InputSource(Reader.of(src)));
     }
 
@@ -131,7 +131,7 @@ public final class Xml {
      * @return the parsed document
      * @throws XmlException if parsing fails
      */
-    public static Document parseNameSpaced(InputStream in) {
+    public static Document parseNS(InputStream in) {
         return parse(NAMESPACE_AWARE_FACTORY, new InputSource(in));
     }
 
@@ -142,7 +142,7 @@ public final class Xml {
      * @return the parsed document
      * @throws XmlException if parsing fails
      */
-    public static Document parseNameSpaced(Reader reader) {
+    public static Document parseNS(Reader reader) {
         return parse(NAMESPACE_AWARE_FACTORY, new InputSource(reader));
     }
 
@@ -153,7 +153,7 @@ public final class Xml {
      * @return the parsed document
      * @throws XmlException if parsing fails (including any underlying I/O error)
      */
-    public static Document parseNameSpaced(Path path) {
+    public static Document parseNS(Path path) {
         try (var in = Files.newInputStream(path)) {
             return parse(NAMESPACE_AWARE_FACTORY, new InputSource(in));
         } catch (IOException e) {

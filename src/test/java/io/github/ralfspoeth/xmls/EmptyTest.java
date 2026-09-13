@@ -5,7 +5,7 @@ import org.xml.sax.SAXException;
 
 import java.io.IOException;
 
-import static io.github.ralfspoeth.xmls.XmlStreams.*;
+import static io.github.ralfspoeth.xmls.XmlStreams.childNodes;
 import static org.junit.jupiter.api.Assertions.*;
 
 class EmptyTest extends BaseTest{
